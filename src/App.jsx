@@ -40,7 +40,6 @@ import AIGenerateModal from './components/modals/AIGenerateModal';
 import ProjectsModal from './components/modals/ProjectsModal';
 import SaveTemplateModal from './components/modals/SaveTemplateModal';
 import LayersList from './components/panels/LayersList';
-import PageProperties from './components/panels/PageProperties';
 import Properties from './components/panels/Properties';
 import BackgroundPopover from './components/popovers/BackgroundPopover';
 import PresentationMode from './components/preview/PresentationMode';
@@ -244,6 +243,9 @@ export default function App() {
   // Conjunto efetivo de ids selecionados (primário + múltiplos).
   const activeIds = selectedIds.length ? selectedIds : (selectedId ? [selectedId] : []);
 
+  // ── Clipboard de formatação de produto ──────────────────────────────
+  const [formatClipboard, setFormatClipboard] = useState(null);
+
   const placedIds = useMemo(() => {
     const s = new Set();
     pages.forEach(p => p.elements.forEach(e => e.type === 'product' && e.productId && s.add(e.productId)));
@@ -342,6 +344,25 @@ export default function App() {
   const toggleLock = (id) => changeEl(id, { locked: !page.elements.find(e => e.id === id)?.locked });
   const toggleHidden = (id) => changeEl(id, { hidden: !page.elements.find(e => e.id === id)?.hidden });
 
+  const copyFormat = useCallback(() => {
+    if (!selectedEl || selectedEl.type !== 'product') return;
+    setFormatClipboard({
+      layout:    selectedEl.layout,
+      fields:    selectedEl.fields,
+      fontSizes: selectedEl.fontSizes,
+    });
+  }, [selectedEl]);
+
+  const pasteFormat = useCallback(() => {
+    if (!formatClipboard) return;
+    activeIds.forEach(id => {
+      const el = page.elements.find(e => e.id === id);
+      if (el?.type === 'product') changeEl(id, formatClipboard);
+    });
+  }, [formatClipboard, activeIds, page.elements, changeEl]);
+
+  const pasteCount = activeIds.filter(id => page.elements.find(e => e.id === id)?.type === 'product').length;
+
   const layerOp = (id, op) => setElements(els => {
     const i = els.findIndex(e => e.id === id); if (i < 0) return els;
     const arr = [...els]; const [item] = arr.splice(i, 1);
@@ -355,7 +376,7 @@ export default function App() {
   // ---- add tools ----
   const addText = () => addEl({ id: uid(), type: 'text', text: 'Texto editável', x: 60, y: 60, w: 220, h: 56, rotation: 0, opacity: 1, fontSize: 30, color: '#ffffff', weight: 800, align: 'left', font: 'Gantari', hidden: false, locked: false });
   const addBox = () => addEl({ id: uid(), type: 'box', x: 70, y: 70, w: 200, h: 120, rotation: 0, opacity: 1, radius: 12, fill: '#00813A', borderW: 0, hidden: false, locked: false });
-  const addProductBox = () => addEl({ id: uid(), type: 'product', productId: null, x: 80, y: 80, w: 150, h: 200, rotation: 0, opacity: 1, radius: 10, fill: '#fff', hidden: false, locked: false });
+  const addProductBox = () => addEl({ id: uid(), type: 'product', productId: null, x: 80, y: 80, w: 150, h: 200, rotation: 0, opacity: 1, radius: 10, fill: '#fff', layout: 'top', fields: { image: true, brand: true, name: true, code: true, price: true }, fontSizes: { brand: 7, name: 11, code: 6, priceScale: 0.85 }, hidden: false, locked: false });
 
   const insertBrandAsset = (asset) => {
     const ratio = asset.ratio || 1;
@@ -388,7 +409,7 @@ export default function App() {
       // fill first empty product slot, else drop a new product box
       const empty = page.elements.find(e => e.type === 'product' && !e.productId);
       if (empty) { changeEl(empty.id, { productId: product.id }); setSelectedId(empty.id); }
-      else addEl({ id: uid(), type: 'product', productId: product.id, x: 90, y: 90, w: 150, h: 210, rotation: 0, opacity: 1, radius: 10, fill: '#fff', hidden: false, locked: false });
+      else addEl({ id: uid(), type: 'product', productId: product.id, x: 90, y: 90, w: 150, h: 210, rotation: 0, opacity: 1, radius: 10, fill: '#fff', layout: 'top', fields: { image: true, brand: true, name: true, code: true, price: true }, fontSizes: { brand: 7, name: 11, code: 6, priceScale: 0.85 }, hidden: false, locked: false });
     }
   };
 
@@ -1384,8 +1405,12 @@ Exportado em: ${new Date().toLocaleString('pt-BR')}
           {rightTab === 'props' && (
             <div className="flex-1 overflow-y-auto min-h-0">
               {selectedEl
-                ? <Properties el={selectedEl} onChange={changeEl} onLayer={layerOp} onDelete={deleteEl} onDuplicate={duplicateEl} onToggleLock={toggleLock} />
-                : <PageProperties page={page} pageIndex={pageIdx} onOpenBg={() => setShowBg(v => !v)} />
+                ? <Properties el={selectedEl} onChange={changeEl} onLayer={layerOp} onDelete={deleteEl} onDuplicate={duplicateEl} onToggleLock={toggleLock} onCopyFormat={copyFormat} onPasteFormat={pasteFormat} hasFormatClipboard={!!formatClipboard} pasteCount={pasteCount} />
+                : (
+                  <div className={`flex flex-col items-center justify-center h-40 gap-1 ${isDark ? 'text-stone-600' : 'text-stone-400'}`}>
+                    <p className="text-[12px]">Selecione um elemento</p>
+                  </div>
+                )
               }
             </div>
           )}

@@ -22,7 +22,7 @@ export default function CanvasElement({ el, selected, primary, editing, onSelect
         borderRadius: (el.type === 'image' || el.type === 'box' || el.type === 'product') ? (el.radius || 0) : 0,
         cursor: el.locked ? 'default' : 'move',
         zIndex: 1,
-        boxShadow: el.type === 'product' && el.productId ? '0 4px 14px rgba(0,0,0,.18)' : 'none',
+        boxShadow: 'none',
       }}
     >
       {el.type === 'product' && <ProductContent el={el} />}

@@ -14,7 +14,7 @@ export function StaticElement({ el }) {
         transform: `rotate(${el.rotation || 0}deg)`,
         opacity: el.opacity ?? 1,
         borderRadius: (el.type === 'image' || el.type === 'box' || el.type === 'product') ? (el.radius || 0) : 0,
-        boxShadow: el.type === 'product' && el.productId ? '0 4px 14px rgba(0,0,0,.18)' : 'none',
+        boxShadow: 'none',
       }}
     >
       {el.type === 'product' && <ProductContent el={el} />}

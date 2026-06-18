@@ -1,21 +1,20 @@
 import { fmt, splitMoney } from '../../utils/helpers';
 
-export default function PriceTag({ p, scale = 1 }) {
+export default function PriceTag({ p, scale = 1, light = false }) {
   const v = splitMoney(p.installmentValue);
+  const priceColor = light ? '#fca5a5' : '#be123c';
+  const labelColor = light ? '#d6d3d1' : '#44403c';
+  const subtleColor = light ? '#a8a29e' : '#78716c';
   return (
     <div className="leading-none" style={{ transform: `scale(${scale})`, transformOrigin: 'left bottom' }}>
-      <span className="font-black text-rose-700" style={{ fontSize: 9 }}>{p.installments}x R$</span>
-      <div className="flex items-start text-rose-700" style={{ fontFamily: 'Gantari,sans-serif' }}>
+      <span className="font-black" style={{ fontSize: 9, color: priceColor }}>{p.installments}x R$</span>
+      <div className="flex items-start" style={{ fontFamily: 'Gantari,sans-serif', color: priceColor }}>
         <span className="font-black" style={{ fontSize: 38, lineHeight: 0.8 }}>{v.int}</span>
         <span className="font-black" style={{ fontSize: 18 }}>,{v.dec}</span>
       </div>
-      <div className="text-stone-700 font-semibold" style={{ fontSize: 7 }}>no Crediário Lebes</div>
-      {p.priceOld && <div className="text-stone-500 line-through" style={{ fontSize: 7 }}>De R$ {fmt(p.priceOld)}</div>}
-      <div className="text-stone-700 font-semibold" style={{ fontSize: 7 }}>Por R$ {fmt(p.priceCash)} à vista</div>
+      <div className="font-semibold" style={{ fontSize: 7, color: labelColor }}>no Crediário Lebes</div>
+      {p.priceOld && <div className="line-through" style={{ fontSize: 7, color: subtleColor }}>De R$ {fmt(p.priceOld)}</div>}
+      <div className="font-semibold" style={{ fontSize: 7, color: labelColor }}>Por R$ {fmt(p.priceCash)} à vista</div>
     </div>
   );
 }
-
-// ============================================================
-// ELEMENT CONTENT RENDERERS
-// ============================================================

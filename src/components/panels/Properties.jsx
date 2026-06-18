@@ -5,10 +5,12 @@ import {
   ArrowDownToLine,
   ArrowUpToLine,
   Bold,
+  Clipboard,
   Copy,
   Lock,
   MoveDown,
   MoveUp,
+  Pipette,
   Trash2,
   Unlock,
   X,
@@ -18,9 +20,70 @@ import { PRODUCTS } from '../../data/products';
 import IconBtn from '../ui/IconBtn';
 import NumField from '../ui/NumField';
 
-export default function Properties({ el, onChange, onLayer, onDelete, onDuplicate, onToggleLock }) {
+const DEFAULT_FIELDS     = { image: true, brand: true, name: true, code: true, price: true };
+const DEFAULT_FONT_SIZES = { brand: 7, name: 11, code: 6, priceScale: 0.85 };
+
+function resolveLayout(el) {
+  const l = el.layout || 'top';
+  if (l === 'vertical')   return 'top';
+  if (l === 'horizontal') return 'left';
+  return l;
+}
+
+const LAYOUT_OPTIONS = [
+  { id: 'top',     label: '↑ Acima' },
+  { id: 'left',    label: '← Esquerda' },
+  { id: 'right',   label: '→ Direita' },
+  { id: 'card',    label: '◼ Card' },
+  { id: 'minimal', label: '— Mínimo' },
+];
+
+const FIELD_OPTIONS = [
+  { key: 'image', label: 'Imagem / ícone' },
+  { key: 'brand', label: 'Marca' },
+  { key: 'name',  label: 'Nome do produto' },
+  { key: 'code',  label: 'Código' },
+  { key: 'price', label: 'Preço' },
+];
+
+function Toggle({ on, onChange }) {
+  return (
+    <button
+      onClick={onChange}
+      className={`w-8 h-4 rounded-full transition-colors relative shrink-0 ${on ? 'bg-emerald-600' : 'bg-stone-700'}`}
+    >
+      <span
+        className="absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all"
+        style={{ left: on ? '17px' : '2px' }}
+      />
+    </button>
+  );
+}
+
+function SizeInput({ value, min, max, onChange }) {
+  return (
+    <input
+      type="number"
+      min={min}
+      max={max}
+      value={value}
+      onChange={e => onChange(Number(e.target.value))}
+      className="w-14 bg-stone-900 border border-stone-800 rounded px-1.5 py-0.5 text-[10px] text-stone-200 text-right focus:outline-none focus:border-emerald-700/60"
+    />
+  );
+}
+
+export default function Properties({ el, onChange, onLayer, onDelete, onDuplicate, onToggleLock, onCopyFormat, onPasteFormat, hasFormatClipboard, pasteCount }) {
   if (!el) return null;
   const set = (patch) => onChange(el.id, patch);
+
+  const layout    = resolveLayout(el);
+  const fields    = { ...DEFAULT_FIELDS,     ...(el.fields    || {}) };
+  const fontSizes = { ...DEFAULT_FONT_SIZES, ...(el.fontSizes || {}) };
+
+  const setField    = (key, val) => set({ fields:    { ...fields,    [key]: val } });
+  const setFontSize = (key, val) => set({ fontSizes: { ...fontSizes, [key]: val } });
+
   return (
     <div className="p-3 space-y-3 overflow-y-auto">
       <div className="flex items-center justify-between">
@@ -117,13 +180,124 @@ export default function Properties({ el, onChange, onLayer, onDelete, onDuplicat
         </div>
       )}
 
-      {/* Product assignment */}
+      {/* ── Produto: vínculo ───────────────────────────────────────── */}
       {el.type === 'product' && (
         <div className="text-[10px] text-stone-500 bg-stone-900/50 rounded p-2 leading-relaxed">
           {el.productId
             ? <>Vinculado a <span className="text-emerald-400 font-semibold">{PRODUCTS.find(p => p.id === el.productId)?.name}</span>. Clique noutro produto do catálogo para trocar, ou no X abaixo para esvaziar.</>
             : <>Slot vazio. Com ele selecionado, clique num produto do catálogo para preencher.</>}
-          {el.productId && <button onClick={() => set({ productId: null })} className="mt-1.5 text-rose-400 hover:text-rose-300 flex items-center gap-1"><X size={11} /> Esvaziar slot</button>}
+          {el.productId && (
+            <button onClick={() => set({ productId: null })} className="mt-1.5 text-rose-400 hover:text-rose-300 flex items-center gap-1">
+              <X size={11} /> Esvaziar slot
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ── Produto: posição da imagem ─────────────────────────────── */}
+      {el.type === 'product' && (
+        <div className="space-y-3">
+          <div>
+            <span className="text-[9px] uppercase tracking-wider text-stone-500">Posição da imagem</span>
+            <div className="grid grid-cols-3 gap-1 mt-1.5">
+              {LAYOUT_OPTIONS.slice(0, 3).map(({ id, label }) => (
+                <button
+                  key={id}
+                  onClick={() => set({ layout: id })}
+                  className={`text-[10px] py-1.5 rounded text-center transition ${
+                    layout === id ? 'bg-emerald-700 text-white' : 'bg-stone-900 text-stone-400 hover:text-stone-200'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="grid grid-cols-2 gap-1 mt-1">
+              {LAYOUT_OPTIONS.slice(3).map(({ id, label }) => (
+                <button
+                  key={id}
+                  onClick={() => set({ layout: id })}
+                  className={`text-[10px] py-1.5 rounded text-center transition ${
+                    layout === id ? 'bg-emerald-700 text-white' : 'bg-stone-900 text-stone-400 hover:text-stone-200'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Produto: campos visíveis ──────────────────────────── */}
+          <div>
+            <span className="text-[9px] uppercase tracking-wider text-stone-500">Campos visíveis</span>
+            <div className="mt-1.5 space-y-1.5">
+              {FIELD_OPTIONS.map(({ key, label }) => (
+                <label key={key} className="flex items-center justify-between gap-2 cursor-pointer">
+                  <span className="text-[10px] text-stone-300">{label}</span>
+                  <Toggle on={fields[key]} onChange={() => setField(key, !fields[key])} />
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Produto: tamanhos de fonte ────────────────────────── */}
+          <div>
+            <span className="text-[9px] uppercase tracking-wider text-stone-500">Tamanhos</span>
+            <div className="mt-1.5 space-y-1.5">
+              {fields.brand && (
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] text-stone-400">Marca</span>
+                  <SizeInput value={fontSizes.brand} min={4} max={24} onChange={v => setFontSize('brand', v)} />
+                </div>
+              )}
+              {fields.name && (
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] text-stone-400">Nome</span>
+                  <SizeInput value={fontSizes.name} min={6} max={40} onChange={v => setFontSize('name', v)} />
+                </div>
+              )}
+              {fields.code && (
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] text-stone-400">Código</span>
+                  <SizeInput value={fontSizes.code} min={4} max={16} onChange={v => setFontSize('code', v)} />
+                </div>
+              )}
+              {fields.price && (
+                <label className="block">
+                  <span className="text-[9px] uppercase tracking-wider text-stone-500">
+                    Escala do preço · {Math.round(fontSizes.priceScale * 100)}%
+                  </span>
+                  <input
+                    type="range" min={0.3} max={1.8} step={0.05}
+                    value={fontSizes.priceScale}
+                    onChange={e => setFontSize('priceScale', Number(e.target.value))}
+                    className="w-full mt-1 accent-emerald-600"
+                  />
+                </label>
+              )}
+            </div>
+          </div>
+
+          {/* ── Produto: copiar / colar formatação ───────────────── */}
+          <div className="flex gap-1.5 pt-1">
+            <button
+              onClick={onCopyFormat}
+              className="flex-1 text-[10px] py-1.5 rounded bg-stone-800 text-stone-300 hover:text-white transition flex items-center justify-center gap-1"
+              title="Copiar layout, campos e tamanhos desta box"
+            >
+              <Pipette size={11} /> Copiar formatação
+            </button>
+            {hasFormatClipboard && (
+              <button
+                onClick={onPasteFormat}
+                className="flex-1 text-[10px] py-1.5 rounded bg-emerald-900/60 text-emerald-400 hover:text-emerald-300 transition flex items-center justify-center gap-1"
+                title="Colar formatação nas boxes selecionadas"
+              >
+                <Clipboard size={11} />
+                Colar{pasteCount > 1 ? ` (${pasteCount})` : ''}
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -140,7 +314,3 @@ export default function Properties({ el, onChange, onLayer, onDelete, onDuplicat
     </div>
   );
 }
-
-// ============================================================
-// LAYERS PANEL — com drag-and-drop para reordenar camadas
-// ============================================================
