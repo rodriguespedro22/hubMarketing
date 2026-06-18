@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
   Bookmark,
@@ -148,6 +148,7 @@ export default function App() {
   const [canvasZoom, setCanvasZoom] = useState(1);
   const zoomBy = (delta) => setCanvasZoom(z => Math.min(2, Math.max(0.25, Math.round((z + delta) * 100) / 100)));
   const zoomTo = (v) => setCanvasZoom(Math.min(2, Math.max(0.25, v)));
+  const [pendingZoomScroll, setPendingZoomScroll] = useState(null);
 
   // Templates do usuário (persistidos em localStorage como "do usuário logado")
   const [savedTemplates, setSavedTemplates] = useState(() => {
@@ -247,6 +248,8 @@ export default function App() {
   const scrollAreaRef = useRef(null);
   const zoomByRef = useRef(null);
   zoomByRef.current = zoomBy;
+  const canvasZoomRef = useRef(canvasZoom);
+  canvasZoomRef.current = canvasZoom;
   const pageBgBtnRef = useRef(null);
 
   const page = pages.find(p => p.id === currentId);
@@ -850,11 +853,52 @@ Exportado em: ${new Date().toLocaleString('pt-BR')}
     const handler = (e) => {
       if (!e.ctrlKey && !e.metaKey) return;
       e.preventDefault();
-      zoomByRef.current(e.deltaY < 0 ? 0.1 : -0.1);
+      const z_old = canvasZoomRef.current;
+      const delta = e.deltaY < 0 ? 0.1 : -0.1;
+      const z_new = Math.min(2, Math.max(0.25, Math.round((z_old + delta) * 100) / 100));
+      if (z_new === z_old) return;
+
+      const scrollEl = scrollAreaRef.current;
+      const pageEl = pageRef.current;
+      if (scrollEl && pageEl) {
+        const containerRect = scrollEl.getBoundingClientRect();
+        const pageRect = pageEl.getBoundingClientRect();
+        // ponto do canvas (em unidades não escaladas) sob o cursor
+        const cx = (e.clientX - pageRect.left) / z_old;
+        const cy = (e.clientY - pageRect.top) / z_old;
+        // posição do cursor relativa ao scroll container (viewport)
+        const mx = e.clientX - containerRect.left;
+        const my = e.clientY - containerRect.top;
+        setPendingZoomScroll({ cx, cy, mx, my });
+      }
+
+      setCanvasZoom(z_new);
     };
     window.addEventListener('wheel', handler, { passive: false });
     return () => window.removeEventListener('wheel', handler);
   }, []);
+
+  // Ajusta scroll após render para manter o ponto do canvas sob o cursor
+  useLayoutEffect(() => {
+    if (!pendingZoomScroll) return;
+    const { cx, cy, mx, my } = pendingZoomScroll;
+    const scrollEl = scrollAreaRef.current;
+    const pageEl = pageRef.current;
+    if (!scrollEl || !pageEl) { setPendingZoomScroll(null); return; }
+
+    const containerRect = scrollEl.getBoundingClientRect();
+    const pageRect = pageEl.getBoundingClientRect();
+
+    // posição atual do ponto no viewport após o re-render com novo zoom
+    const currentMx = pageRect.left - containerRect.left + cx * canvasZoomRef.current;
+    const currentMy = pageRect.top - containerRect.top + cy * canvasZoomRef.current;
+
+    // desloca o scroll para alinhar esse ponto com a posição original do cursor
+    scrollEl.scrollLeft += currentMx - mx;
+    scrollEl.scrollTop  += currentMy - my;
+
+    setPendingZoomScroll(null);
+  }, [pendingZoomScroll]);
 
 
   const hubProps = { isDark, onToggleTheme: toggleTheme };
