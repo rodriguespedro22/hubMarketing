@@ -34,6 +34,8 @@ import HubDrawer from './components/hub/HubDrawer';
 import CanvasElement from './components/canvas/CanvasElement';
 import BackgroundLayer from './components/canvas/BackgroundLayer';
 import LeftSidebar from './components/sidebar/LeftSidebar';
+import MobileBottomBar from './components/mobile/MobileBottomBar';
+import MobileBottomSheet from './components/mobile/MobileBottomSheet';
 import ExportModal from './components/modals/ExportModal';
 import FormatModal from './components/modals/FormatModal';
 import AIGenerateModal from './components/modals/AIGenerateModal';
@@ -193,6 +195,16 @@ export default function App() {
     const mobile = typeof window !== 'undefined' && window.innerWidth < 1024;
     return { left: !mobile, top: true, right: !mobile };
   });
+
+  // Detecção de mobile (< 768px) para layout de barra inferior estilo Canva
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
+  const [mobilePanel, setMobilePanel] = useState(null);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   // Modo apresentação (preview)
   const [showPreview, setShowPreview] = useState(false);
@@ -974,7 +986,7 @@ Exportado em: ${new Date().toLocaleString('pt-BR')}
           <button
             onClick={() => setPanels(p => ({ ...p, left: !p.left }))}
             title="Menu lateral"
-            className={`p-1.5 rounded-md shrink-0 transition ${isDark ? 'text-stone-400 hover:text-stone-100 hover:bg-stone-800/60' : 'text-[#606060] hover:bg-[#f0efe9]'}`}
+            className={`hidden md:block p-1.5 rounded-md shrink-0 transition ${isDark ? 'text-stone-400 hover:text-stone-100 hover:bg-stone-800/60' : 'text-[#606060] hover:bg-[#f0efe9]'}`}
           >
             <Menu size={16} />
           </button>
@@ -991,12 +1003,12 @@ Exportado em: ${new Date().toLocaleString('pt-BR')}
                 : 'bg-white border-[#e5e5e0] text-[#606060] hover:bg-[#f4f4f0]'
             }`}
           >
-            <ArrowLeft size={13} /> Voltar
+            <ArrowLeft size={13} /><span className="hidden sm:inline">Voltar</span>
           </button>
 
           <button
             onClick={navHome}
-            className={`flex items-center gap-1 text-[12px] font-medium px-2.5 py-1.5 rounded-full border transition shrink-0 ${
+            className={`hidden sm:flex items-center gap-1 text-[12px] font-medium px-2.5 py-1.5 rounded-full border transition shrink-0 ${
               isDark
                 ? 'bg-stone-900/60 border-stone-700/50 text-stone-300 hover:text-stone-100 hover:border-stone-600'
                 : 'bg-white border-[#e5e5e0] text-[#606060] hover:bg-[#f4f4f0]'
@@ -1192,12 +1204,12 @@ Exportado em: ${new Date().toLocaleString('pt-BR')}
           </button>
           <button onClick={() => setPanels(p => ({ ...p, right: !p.right }))}
             title={panels.right ? 'Ocultar painel' : 'Mostrar painel'}
-            className={`p-1.5 rounded-md transition ${isDark ? 'text-stone-400 hover:text-stone-200 hover:bg-stone-800/60' : 'text-[#606060] hover:bg-[#f0efe9]'}`}>
+            className={`hidden md:block p-1.5 rounded-md transition ${isDark ? 'text-stone-400 hover:text-stone-200 hover:bg-stone-800/60' : 'text-[#606060] hover:bg-[#f0efe9]'}`}>
             <Layers size={15} />
           </button>
           <button onClick={toggleTheme}
             title={isDark ? 'Mudar para modo claro' : 'Mudar para modo escuro'}
-            className={`p-1.5 rounded-md transition ${isDark ? 'text-stone-400 hover:text-stone-200 hover:bg-stone-800/60' : 'text-[#606060] hover:bg-[#f0efe9]'}`}>
+            className={`hidden sm:block p-1.5 rounded-md transition ${isDark ? 'text-stone-400 hover:text-stone-200 hover:bg-stone-800/60' : 'text-[#606060] hover:bg-[#f0efe9]'}`}>
             {isDark ? <Sun size={15} /> : <Moon size={15} />}
           </button>
         </div>
@@ -1206,13 +1218,13 @@ Exportado em: ${new Date().toLocaleString('pt-BR')}
 
       {/* BODY */}
       <div className="flex-1 flex min-h-0 relative">
-        {/* Backdrop: cobre o canvas quando um sidebar está aberto no mobile */}
-        {(panels.left || panels.right) && (
+        {/* Backdrop: cobre o canvas quando um sidebar está aberto no tablet/desktop */}
+        {!isMobile && (panels.left || panels.right) && (
           <div className="absolute inset-0 bg-black/60 z-30 lg:hidden"
             onClick={() => setPanels(p => ({ ...p, left: false, right: false }))} />
         )}
 
-        {panels.left && (
+        {!isMobile && panels.left && (
           <div className="absolute top-0 left-0 bottom-0 z-40 overflow-hidden lg:contents">
             <LeftSidebar
               onAdd={onCatalogAdd}
@@ -1253,7 +1265,7 @@ Exportado em: ${new Date().toLocaleString('pt-BR')}
         {/* CENTER CANVAS */}
         <main className={`flex-1 flex flex-col min-w-0 relative ${isDark ? 'bg-stone-900/30' : 'bg-[#eeede8]'}`}>
 
-          <div ref={scrollAreaRef} className="flex-1 overflow-auto flex flex-col items-center px-6 pt-5 pb-20 gap-5">
+          <div ref={scrollAreaRef} className={`flex-1 overflow-auto flex flex-col items-center px-6 pt-5 gap-5 ${isMobile ? 'pb-32' : 'pb-20'}`}>
 
             {/* Pill: navegação de páginas + zoom */}
             <div className={`flex items-center gap-1 rounded-2xl px-3 py-1.5 shrink-0 text-[11px] border shadow ${
@@ -1336,7 +1348,7 @@ Exportado em: ${new Date().toLocaleString('pt-BR')}
 
           {/* Barra flutuante de página — aparece quando nenhum elemento está selecionado */}
           {!selectedId && !selectedIds.length && (
-            <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 rounded-2xl shadow-2xl px-3 py-2 backdrop-blur pointer-events-auto border ${
+            <div className={`absolute ${isMobile ? 'bottom-20' : 'bottom-6'} left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 rounded-2xl shadow-2xl px-3 py-2 backdrop-blur pointer-events-auto border ${
               isDark ? 'bg-stone-900/95 border-stone-700/60' : 'bg-white/90 border-[#e0dfd9]'
             }`}>
               <div className="relative">
@@ -1366,7 +1378,7 @@ Exportado em: ${new Date().toLocaleString('pt-BR')}
         </main>
 
         {/* RIGHT: PROPERTIES + LAYERS + PAGES — com abas */}
-        {panels.right && (
+        {!isMobile && panels.right && (
         <div className="absolute top-0 right-0 bottom-0 z-40 w-72 overflow-hidden lg:contents">
         <aside className={`w-72 shrink-0 border-l flex flex-col h-full ${
           isDark ? 'border-stone-800 bg-stone-950 lg:bg-stone-950/40' : 'border-[#ecece7] bg-white'
@@ -1515,8 +1527,69 @@ Exportado em: ${new Date().toLocaleString('pt-BR')}
           onClose={() => setShowAI(false)} />
       )}
 
+      {/* MOBILE: barra de navegação inferior + bottom sheet (estilo Canva) */}
+      {isMobile && (
+        <>
+          <MobileBottomBar
+            activePanel={mobilePanel}
+            onSelect={(id) => setMobilePanel(p => p === id ? null : id)}
+            isDark={isDark}
+            hasSelection={!!selectedEl}
+          />
+          <MobileBottomSheet
+            open={mobilePanel !== null}
+            onClose={() => setMobilePanel(null)}
+            isDark={isDark}
+          >
+            {mobilePanel !== null && (mobilePanel === '__props' ? (
+              <div className="flex-1 overflow-y-auto min-h-0">
+                {selectedEl
+                  ? <Properties el={selectedEl} onChange={changeEl} onLayer={layerOp} onDelete={deleteEl} onDuplicate={duplicateEl} onToggleLock={toggleLock} onCopyFormat={copyFormat} onPasteFormat={pasteFormat} hasFormatClipboard={!!formatClipboard} pasteCount={pasteCount} />
+                  : <div className="flex items-center justify-center h-40 text-stone-500 text-sm">Selecione um elemento</div>
+                }
+              </div>
+            ) : (
+              <LeftSidebar
+                sheetPanel={mobilePanel}
+                onAdd={onCatalogAdd}
+                placedIds={placedIds}
+                uploads={uploads}
+                onUploadFiles={onUploadFiles}
+                onAddUpload={addUploadToCanvas}
+                onDeleteUpload={deleteUpload}
+                onAddText={addText}
+                onAddBox={addBox}
+                onAddProductBox={addProductBox}
+                onGenGrid={genGrid}
+                onPickImage={onPickImage}
+                savedTemplates={savedTemplates}
+                onApplySavedTemplate={applySavedTemplate}
+                onDeleteSavedTemplate={deleteSavedTemplate}
+                onRenameSavedTemplate={renameSavedTemplate}
+                onApplyBuiltinTemplate={applyTemplate}
+                savedProjects={savedProjects}
+                docTitle={docTitle}
+                onSaveNewProject={() => saveProject()}
+                onUpdateProject={(id) => saveProject(id)}
+                onLoadProject={loadProject}
+                onDeleteProject={deleteProject}
+                onImportProject={importProjectFile}
+                onExportProject={exportEditable}
+                onOpenAI={() => setShowAI(true)}
+                onInsertAsset={insertBrandAsset}
+                selectedEl={selectedEl}
+                onChangeEl={changeEl}
+                brandLogos={brandLogos}
+                onUploadBrandLogo={uploadBrandLogo}
+                onDeleteBrandLogo={deleteBrandLogo}
+              />
+            ))}
+          </MobileBottomSheet>
+        </>
+      )}
+
       {/* Toast de salvamento */}
-      <div className={`fixed bottom-5 right-5 z-[9999] transition-all duration-300 ${saveToast ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
+      <div className={`fixed ${isMobile ? 'bottom-20' : 'bottom-5'} right-5 z-[9999] transition-all duration-300 ${saveToast ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
         <div className="flex items-center gap-3 bg-stone-800 border border-stone-700 text-stone-100 text-xs px-4 py-3 rounded-xl shadow-xl">
           <Save size={14} className="text-emerald-400 shrink-0" />
           <span>Projeto salvo com sucesso.</span>

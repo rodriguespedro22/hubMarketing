@@ -84,6 +84,18 @@ function ModelosPanel({ savedTemplates, onApplySavedTemplate, onDeleteSavedTempl
 // ---- Elementos ----
 function ElementosPanel({ onAddText, onAddBox, onAddProductBox, onGenGrid, onInsertImageClick }) {
   const [showGrid, setShowGrid] = useState(false);
+  const [popoverPos, setPopoverPos] = useState({ top: 0, left: 0 });
+  const gridBtnRef = useRef(null);
+
+  const toggleGrid = () => {
+    if (!showGrid && gridBtnRef.current) {
+      const rect = gridBtnRef.current.getBoundingClientRect();
+      const top = Math.min(rect.top, window.innerHeight - 280);
+      const left = rect.right + 8;
+      setPopoverPos({ top, left });
+    }
+    setShowGrid(s => !s);
+  };
 
   const items = [
     { icon: Type,      label: 'Texto',           sub: 'Caixa de texto editável',    action: onAddText },
@@ -107,7 +119,7 @@ function ElementosPanel({ onAddText, onAddBox, onAddProductBox, onGenGrid, onIns
         </button>
       ))}
 
-      <button onClick={() => setShowGrid(s => !s)}
+      <button ref={gridBtnRef} onClick={toggleGrid}
         className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left border transition-all ${showGrid ? 'border-emerald-600/50 bg-emerald-950/30' : 'bg-stone-900/60 border-stone-800 hover:border-emerald-600/50 hover:bg-stone-900'}`}>
         <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${showGrid ? 'bg-emerald-900/50' : 'bg-stone-800'}`}>
           <Grid3x3 size={16} className={showGrid ? 'text-emerald-300' : 'text-stone-300'} />
@@ -119,13 +131,17 @@ function ElementosPanel({ onAddText, onAddBox, onAddProductBox, onGenGrid, onIns
       </button>
 
       {showGrid && (
-        <div className="rounded-xl border border-stone-800 bg-stone-950/80 overflow-hidden">
-          <GridPopover
-            onGenerate={(cols, rows) => { onGenGrid(cols, rows); setShowGrid(false); }}
-            onClose={() => setShowGrid(false)}
-            inline
-          />
-        </div>
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setShowGrid(false)} />
+          <div className="fixed z-50 w-60 shadow-2xl rounded-xl overflow-hidden"
+            style={{ top: popoverPos.top, left: popoverPos.left }}>
+            <GridPopover
+              onGenerate={(cols, rows) => { onGenGrid(cols, rows); setShowGrid(false); }}
+              onClose={() => setShowGrid(false)}
+              inline
+            />
+          </div>
+        </>
       )}
     </div>
   );
@@ -612,13 +628,77 @@ export default function LeftSidebar({
   onInsertAsset,
   selectedEl, onChangeEl,
   brandLogos, onUploadBrandLogo, onDeleteBrandLogo,
+  sheetPanel = null,
 }) {
   const [activePanel, setActivePanel] = useState(null);
   const imgFileRef = useRef(null);
 
   const toggle = (id) => setActivePanel(p => p === id ? null : id);
   const handleInsertImageClick = () => imgFileRef.current?.click();
-  const panelTitle = PANELS_CONFIG.find(p => p.id === activePanel)?.label ?? '';
+  const panelTitle = PANELS_CONFIG.find(p => p.id === (sheetPanel ?? activePanel))?.label ?? '';
+
+  // Modo sheet (mobile): renderiza apenas o conteúdo do painel, sem o rail lateral
+  if (sheetPanel !== null) {
+    return (
+      <>
+        {sheetPanel === 'modelos' && (
+          <ModelosPanel
+            savedTemplates={savedTemplates}
+            onApplySavedTemplate={onApplySavedTemplate}
+            onDeleteSavedTemplate={onDeleteSavedTemplate}
+            onRenameSavedTemplate={onRenameSavedTemplate}
+            onApplyBuiltinTemplate={onApplyBuiltinTemplate}
+          />
+        )}
+        {sheetPanel === 'elementos' && (
+          <ElementosPanel
+            onAddText={onAddText}
+            onAddBox={onAddBox}
+            onAddProductBox={onAddProductBox}
+            onGenGrid={onGenGrid}
+            onInsertImageClick={handleInsertImageClick}
+          />
+        )}
+        {sheetPanel === 'produtos' && (
+          <ProdutosPanel onAdd={onAdd} placedIds={placedIds} />
+        )}
+        {sheetPanel === 'marca' && (
+          <MarcaPanel
+            onInsertAsset={onInsertAsset}
+            selectedEl={selectedEl}
+            onChangeEl={onChangeEl}
+            brandLogos={brandLogos}
+            onUploadBrandLogo={onUploadBrandLogo}
+            onDeleteBrandLogo={onDeleteBrandLogo}
+          />
+        )}
+        {sheetPanel === 'ia' && (
+          <EditorIAPanel onOpenAI={onOpenAI} />
+        )}
+        {sheetPanel === 'uploads' && (
+          <UploadsPanel
+            uploads={uploads}
+            onUploadFiles={onUploadFiles}
+            onAddUpload={onAddUpload}
+            onDeleteUpload={onDeleteUpload}
+          />
+        )}
+        {sheetPanel === 'projetos' && (
+          <ProjetosPanel
+            savedProjects={savedProjects}
+            docTitle={docTitle}
+            onSaveNew={onSaveNewProject}
+            onUpdate={onUpdateProject}
+            onLoad={onLoadProject}
+            onDelete={onDeleteProject}
+            onImport={onImportProject}
+            onExport={onExportProject}
+          />
+        )}
+        <input ref={imgFileRef} type="file" accept="image/*" className="hidden" onChange={onPickImage} />
+      </>
+    );
+  }
 
   return (
     <div className="flex h-full shrink-0">
