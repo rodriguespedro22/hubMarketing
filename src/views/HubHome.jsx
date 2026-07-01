@@ -111,10 +111,10 @@ function ModuleBlock({ module, isDark, onClick }) {
   );
 }
 
-export default function HubHome({ onNavigate, onMenu, isDark, onToggleTheme }) {
+export default function HubHome({ onNavigate, onMenu, onLogin, isDark, onToggleTheme }) {
   return (
     <div
-      className="w-full h-screen flex flex-col overflow-hidden"
+      className="hub-view w-full h-screen flex flex-col overflow-hidden"
       style={{ background: 'var(--hub-bg)', fontFamily: 'Gantari, system-ui, sans-serif' }}
     >
       {/* Header */}
@@ -143,7 +143,24 @@ export default function HubHome({ onNavigate, onMenu, isDark, onToggleTheme }) {
           </div>
         </div>
 
-        <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
+        <div className="flex items-center gap-2 shrink-0">
+          {onLogin && (
+            <button
+              onClick={onLogin}
+              className="flex items-center gap-1.5 border font-semibold text-[13px] px-[14px] py-[7px] rounded-[20px] transition-colors"
+              style={{
+                background: 'var(--hub-card)',
+                borderColor: 'var(--hub-border)',
+                color: 'var(--hub-text)',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--hub-surface)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'var(--hub-card)'; }}
+            >
+              Entrar <ArrowRight size={13} />
+            </button>
+          )}
+          <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
+        </div>
       </header>
 
       {/* Body */}

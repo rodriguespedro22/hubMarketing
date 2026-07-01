@@ -1,100 +1,5 @@
-import { useRef, useEffect } from 'react';
 import { ArrowRight, BookOpen, LayoutGrid, Play, Tag, Zap, Layers, CheckCircle } from 'lucide-react';
 import HubHeader from '../components/hub/HubHeader';
-
-function HeroAurora({ isDark }) {
-  const grainRef = useRef(null);
-
-  useEffect(() => {
-    const canvas = grainRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    let raf;
-    function resize() {
-      canvas.width  = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
-    }
-    function draw() {
-      const w = canvas.width, h = canvas.height;
-      if (!w || !h) { raf = requestAnimationFrame(draw); return; }
-      const id = ctx.createImageData(w, h);
-      const d  = id.data;
-      for (let i = 0; i < d.length; i += 4) {
-        const v = (Math.random() * 255) | 0;
-        d[i] = v; d[i + 1] = v; d[i + 2] = v; d[i + 3] = 20;
-      }
-      ctx.putImageData(id, 0, 0);
-      raf = requestAnimationFrame(draw);
-    }
-    const ro = new ResizeObserver(resize);
-    ro.observe(canvas);
-    resize();
-    draw();
-    return () => { cancelAnimationFrame(raf); ro.disconnect(); };
-  }, []);
-
-  const light = !isDark;
-
-  return (
-    <>
-      {/* Orb esquerdo — verde claro */}
-      <div className="absolute pointer-events-none" style={{
-        width: 520, height: 520,
-        borderRadius: '50%',
-        background: light
-          ? 'radial-gradient(circle, rgba(180,240,140,0.55) 0%, transparent 65%)'
-          : 'radial-gradient(circle, rgba(80,155,55,0.60) 0%, transparent 65%)',
-        left: -80, top: '50%',
-        transform: 'translateY(-50%)',
-        filter: 'blur(2px)',
-        animation: 'aurora-1 13s ease-in-out infinite',
-      }} />
-
-      {/* Orb direito — verde escuro */}
-      <div className="absolute pointer-events-none" style={{
-        width: 460, height: 460,
-        borderRadius: '50%',
-        background: light
-          ? 'radial-gradient(circle, rgba(28,85,18,0.50) 0%, transparent 65%)'
-          : 'radial-gradient(circle, rgba(12,40,8,0.70) 0%, transparent 65%)',
-        right: -60, top: '50%',
-        transform: 'translateY(-50%)',
-        filter: 'blur(2px)',
-        animation: 'aurora-2 17s ease-in-out infinite',
-      }} />
-
-      {/* Orb âmbar — sotaque, canto inferior central */}
-      <div className="absolute pointer-events-none" style={{
-        width: 300, height: 300,
-        borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(224,145,58,0.28) 0%, transparent 65%)',
-        right: '22%', bottom: -80,
-        filter: 'blur(4px)',
-        animation: 'aurora-3 10s ease-in-out infinite',
-      }} />
-
-      {/* Orb central topo — highlight */}
-      <div className="absolute pointer-events-none" style={{
-        width: 380, height: 380,
-        borderRadius: '50%',
-        background: light
-          ? 'radial-gradient(circle, rgba(210,255,170,0.38) 0%, transparent 60%)'
-          : 'radial-gradient(circle, rgba(95,165,72,0.42) 0%, transparent 60%)',
-        left: '33%', top: '50%',
-        transform: 'translateY(-65%)',
-        filter: 'blur(2px)',
-        animation: 'aurora-4 22s ease-in-out infinite',
-      }} />
-
-      {/* Grain */}
-      <canvas
-        ref={grainRef}
-        className="absolute inset-0 w-full h-full pointer-events-none"
-        style={{ mixBlendMode: 'soft-light', opacity: 0.45 }}
-      />
-    </>
-  );
-}
 
 function fmtDate(ts) {
   if (!ts) return '';
@@ -186,48 +91,17 @@ export default function StudioHome({
     .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
     .slice(0, 4);
 
-  const nav = (
-    <div className="flex items-center gap-1">
-      <button
-        onClick={() => onNavigate('marcas')}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] transition-colors"
-        style={{ color: 'var(--hub-text-muted)' }}
-        onMouseEnter={e => e.currentTarget.style.background = 'var(--hub-surface)'}
-        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-      >
-        Central das Marcas
-      </button>
-      <div
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold"
-        style={{ color: '#3D7A2E', background: isDark ? '#1A2818' : '#E8F0E4' }}
-      >
-        <Play size={12} fill="#3D7A2E" />
-        Estúdio Criativo
-      </div>
-      <button
-        onClick={() => onNavigate('campanhas')}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] transition-colors"
-        style={{ color: 'var(--hub-text-muted)' }}
-        onMouseEnter={e => e.currentTarget.style.background = 'var(--hub-surface)'}
-        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-      >
-        Central de Campanhas
-      </button>
-    </div>
-  );
-
   return (
     <div
-      className="w-full h-screen flex flex-col overflow-hidden"
+      className="hub-view w-full h-screen flex flex-col overflow-hidden"
       style={{ background: 'var(--hub-bg)', fontFamily: 'Gantari, system-ui, sans-serif' }}
     >
       <HubHeader
-        variant="hub"
+        variant="inner"
         title="Estúdio Criativo"
         onMenu={onMenu}
         onBack={onBack}
         onHome={onHome}
-        nav={nav}
         isDark={isDark}
         onToggleTheme={onToggleTheme}
       />
@@ -235,64 +109,84 @@ export default function StudioHome({
       <main className="flex-1 overflow-y-auto">
 
         {/* Hero banner */}
-        <div className="px-5 py-5">
+        <div className="px-4 sm:px-5 py-4 sm:py-5">
           <div
-            className="relative overflow-hidden rounded-2xl px-10 py-9"
+            className="relative overflow-hidden rounded-2xl"
             style={{
-              background: isDark ? '#0E2A0A' : '#4A9A3C',
-              minHeight: 200,
+              background: isDark ? '#0E2A0A' : '#3D7A2E',
+              minHeight: 172,
             }}
           >
-            <HeroAurora isDark={isDark} />
-            <div className="absolute right-48 top-1/2 -translate-y-1/2 w-64 h-64 rounded-full border-[40px] border-white/10 pointer-events-none" />
-            <div className="absolute right-32 top-1/2 -translate-y-1/2 w-44 h-44 rounded-full border-[30px] border-white/10 pointer-events-none" />
+            {/* Geometric accent circles — deliberate, não blobs de aurora */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+              <div className="absolute" style={{
+                width: 340, height: 340,
+                borderRadius: '50%',
+                border: '1.5px solid rgba(255,255,255,0.09)',
+                right: -70, top: '50%', transform: 'translateY(-50%)',
+              }} />
+              <div className="absolute" style={{
+                width: 210, height: 210,
+                borderRadius: '50%',
+                border: '1px solid rgba(255,255,255,0.06)',
+                right: 45, top: '50%', transform: 'translateY(-50%)',
+              }} />
+              <div className="absolute" style={{
+                width: 90, height: 90,
+                borderRadius: '50%',
+                background: 'rgba(255,255,255,0.04)',
+                right: 105, top: '50%', transform: 'translateY(-50%)',
+              }} />
+            </div>
 
-            <div className="flex items-center justify-between gap-8 relative">
-              <div className="max-w-sm">
-                <h2 className="text-white font-bold text-[28px] leading-tight mb-2">
-                  O que vamos criar hoje?
-                </h2>
-                <p className="text-white/80 text-[14px] mb-6 leading-relaxed">
-                  Monte cards, revistas e cartazes com a cara da Lebes em poucos cliques.
-                </p>
-                <button
-                  onClick={onNewProject}
-                  className="inline-flex items-center gap-2 bg-white font-semibold text-[14px] px-5 py-2.5 rounded-xl hover:bg-stone-50 transition-colors"
-                  style={{ color: '#3D7A2E' }}
-                >
-                  Começar a criar <ArrowRight size={14} />
-                </button>
-              </div>
-
-              <div className="flex flex-col gap-3 shrink-0 mr-10">
-                {HERO_TAGS.map(({ label, Icon, color, bg }) => (
-                  <div
-                    key={label}
-                    className="flex items-center gap-2.5 bg-white rounded-xl px-4 py-2.5 shadow-sm"
+            <div className="relative px-6 sm:px-10 py-7 sm:py-9">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5 sm:gap-8">
+                <div className="max-w-sm">
+                  <h2 className="text-white font-bold text-[22px] sm:text-[28px] leading-tight mb-2">
+                    O que vamos criar hoje?
+                  </h2>
+                  <p className="text-white/75 text-[13px] sm:text-[14px] mb-5 sm:mb-6 leading-relaxed">
+                    Monte cards, revistas e cartazes com a cara da Lebes em poucos cliques.
+                  </p>
+                  <button
+                    onClick={onNewProject}
+                    className="inline-flex items-center gap-2 bg-white font-semibold text-[13px] sm:text-[14px] px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl hover:bg-stone-50 transition-colors"
+                    style={{ color: '#3D7A2E' }}
                   >
+                    Começar a criar <ArrowRight size={13} />
+                  </button>
+                </div>
+
+                <div className="hidden sm:flex flex-col gap-2.5 shrink-0">
+                  {HERO_TAGS.map(({ label, Icon, color, bg }) => (
                     <div
-                      className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                      style={{ background: bg }}
+                      key={label}
+                      className="flex items-center gap-2.5 bg-white rounded-xl px-4 py-2.5"
                     >
-                      <Icon size={13} color={color} />
+                      <div
+                        className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                        style={{ background: bg }}
+                      >
+                        <Icon size={13} color={color} />
+                      </div>
+                      <span className="text-[13px] font-semibold text-[#2E2E2E]">{label}</span>
                     </div>
-                    <span className="text-[13px] font-semibold text-[#2E2E2E]">{label}</span>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Formatos */}
-        <div className="px-5 pb-5">
+        <div className="px-4 sm:px-5 pb-5">
           <h3
-            className="font-semibold text-[18px] mb-4"
+            className="font-semibold text-[17px] sm:text-[18px] mb-3 sm:mb-4"
             style={{ color: 'var(--hub-text)' }}
           >
             Escolha um formato
           </h3>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             {FORMATS.map(({ id, formatId, rotulo, label, sub, Icon, iconBg, lightBg, darkBg, tag, tagColor, available }) => (
               <div
                 key={id}
@@ -335,9 +229,9 @@ export default function StudioHome({
         </div>
 
         {/* Recentes */}
-        <div className="px-5 pb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-[18px]" style={{ color: 'var(--hub-text)' }}>
+        <div className="px-4 sm:px-5 pb-8">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h3 className="font-semibold text-[17px] sm:text-[18px]" style={{ color: 'var(--hub-text)' }}>
               Continue de onde parou
             </h3>
             {recents.length > 0 && (
@@ -355,14 +249,14 @@ export default function StudioHome({
               Nenhum projeto salvo ainda. Crie seu primeiro projeto!
             </p>
           ) : (
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
               {recents.map(prj => {
                 const labels = Array.isArray(prj.labels) ? prj.labels : [];
                 return (
                   <button
                     key={prj.id}
                     onClick={() => onOpenProject(prj)}
-                    className="rounded-xl p-4 text-left transition-all border"
+                    className="rounded-xl p-3.5 sm:p-4 text-left transition-all border"
                     style={{
                       background: 'var(--hub-card)',
                       borderColor: 'var(--hub-border)',
@@ -383,10 +277,10 @@ export default function StudioHome({
                         ))}
                       </div>
                     )}
-                    <p className="font-semibold text-[14px] truncate" style={{ color: 'var(--hub-text)' }}>
+                    <p className="font-semibold text-[13px] sm:text-[14px] truncate" style={{ color: 'var(--hub-text)' }}>
                       {prj.title || 'Sem título'}
                     </p>
-                    <p className="text-[12px] mt-0.5" style={{ color: 'var(--hub-text-subtle)' }}>
+                    <p className="text-[11px] sm:text-[12px] mt-0.5" style={{ color: 'var(--hub-text-subtle)' }}>
                       {fmtDate(prj.updatedAt)}
                     </p>
                   </button>
@@ -397,23 +291,23 @@ export default function StudioHome({
         </div>
 
         {/* Tutoriais */}
-        <div className="px-5 pb-8">
+        <div className="px-4 sm:px-5 pb-8">
           <div
-            className="rounded-2xl px-8 py-5 flex items-center justify-between"
+            className="rounded-2xl px-5 sm:px-8 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
             style={{ background: isDark ? '#1A3014' : '#3D7A2E' }}
           >
-            <div className="flex items-center gap-4">
-              <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center shrink-0">
                 <Play size={15} color="#fff" fill="#fff" />
               </div>
               <div>
-                <p className="font-semibold text-white text-[15px]">Tutoriais e dicas</p>
-                <p className="text-white/70 text-[13px]">Aprofunde seus materiais no padrão Lebes por setor</p>
+                <p className="font-semibold text-white text-[14px] sm:text-[15px]">Tutoriais e dicas</p>
+                <p className="text-white/70 text-[12px] sm:text-[13px]">Aprofunde seus materiais no padrão Lebes por setor</p>
               </div>
             </div>
             <button
               onClick={() => onNavigate('apoio')}
-              className="flex items-center gap-1.5 text-white font-semibold text-[13px] bg-white/15 px-4 py-2 rounded-lg hover:bg-white/25 transition-colors"
+              className="flex items-center gap-1.5 text-white font-semibold text-[13px] bg-white/15 px-4 py-2 rounded-lg hover:bg-white/25 transition-colors self-start sm:self-auto shrink-0"
             >
               Explorar tutoriais <ArrowRight size={13} />
             </button>

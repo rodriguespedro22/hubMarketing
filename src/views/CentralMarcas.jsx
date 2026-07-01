@@ -42,7 +42,7 @@ function BrandCard({ data }) {
   const { tag, name, cores, tipografia, tomDeVoz } = data;
   return (
     <div
-      className="rounded-2xl p-7 flex flex-col gap-5"
+      className="rounded-2xl p-5 sm:p-7 flex flex-col gap-4 sm:gap-5"
       style={{ background: 'var(--hub-card)' }}
     >
       {/* header */}
@@ -123,7 +123,7 @@ function BrandCard({ data }) {
 export default function CentralMarcas({ onMenu, onBack, onHome, isDark, onToggleTheme }) {
   return (
     <div
-      className="w-full h-screen flex flex-col overflow-hidden"
+      className="hub-view w-full h-screen flex flex-col overflow-hidden"
       style={{ background: 'var(--hub-bg)', fontFamily: 'Gantari, system-ui, sans-serif' }}
     >
       <HubHeader
@@ -136,15 +136,15 @@ export default function CentralMarcas({ onMenu, onBack, onHome, isDark, onToggle
         onToggleTheme={onToggleTheme}
       />
 
-      <main className="flex-1 overflow-y-auto px-10 py-8">
-        <h1 className="font-bold text-[28px] mb-1" style={{ color: 'var(--hub-text)' }}>
+      <main className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 sm:py-8 md:px-10">
+        <h1 className="font-bold text-[24px] sm:text-[28px] mb-1" style={{ color: 'var(--hub-text)' }}>
           Central das Marcas
         </h1>
-        <p className="text-[14px] font-light mb-8" style={{ color: 'var(--hub-text-muted)' }}>
+        <p className="text-[13px] sm:text-[14px] font-light mb-6 sm:mb-8" style={{ color: 'var(--hub-text-muted)' }}>
           Os fundamentos visuais e de comunicação das marcas do grupo
         </p>
 
-        <div className="grid grid-cols-2 gap-5 max-w-[1360px]">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 max-w-[1360px]">
           <BrandCard data={LOJAS_LEBES} />
           <BrandCard data={GRUPO_LEBES} />
         </div>

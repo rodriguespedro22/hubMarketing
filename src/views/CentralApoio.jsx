@@ -1,174 +1,198 @@
 import { useState } from 'react';
-import { ArrowRight, Play, MessageSquare, Mail, ChevronRight, Phone } from 'lucide-react';
+import { Play, MessageSquare, Mail, ArrowRight, ArrowDown, Smartphone, Volume2, Tag } from 'lucide-react';
 import HubHeader from '../components/hub/HubHeader';
 
-const OPTIONS = [
+const SECTION_CARDS = [
   {
     id: 'tutoriais',
     title: 'Tutoriais',
-    desc: 'Vídeos, dicas e guias por setor: redes sociais, comunicação e campanhas',
+    desc: 'Vídeos, dicas e guias por setor: redes sociais, comunicação e campanhas.',
     Icon: Play,
-    lightBg: '#E8F0E4',
-    darkBg: '#1A2818',
-    iconBg: '#5CA847',
-    titleColor: { light: '#2E3D27', dark: '#B8D4B0' },
-    descColor: { light: '#5A6B50', dark: '#7A9A72' },
-    linkColor: '#5CA847',
   },
   {
     id: 'faq',
     title: 'FAQ',
-    desc: 'Não achou o que precisava? Mande sua dúvida pro time de marketing',
+    desc: 'Não achou o que procurava? Mande sua dúvida pro time de marketing.',
     Icon: MessageSquare,
-    lightBg: '#FDF0E4',
-    darkBg: '#282016',
-    iconBg: '#E0913A',
-    titleColor: { light: '#6B4A23', dark: '#D4A472' },
-    descColor: { light: '#8A6840', dark: '#9A7850' },
-    linkColor: '#E0913A',
   },
   {
     id: 'contatos',
     title: 'Contatos',
-    desc: 'Emails e telefones dos setores e pessoas importantes do time',
+    desc: 'Emails e telefones dos setores e pessoas importantes do time.',
     Icon: Mail,
-    lightBg: '#E4EEF5',
-    darkBg: '#162030',
-    iconBg: '#3878A8',
-    titleColor: { light: '#23456B', dark: '#7AAAD4' },
-    descColor: { light: '#406084', dark: '#608AA8' },
-    linkColor: '#3878A8',
   },
 ];
 
-const TUTORIAIS = [
-  { id: 1, sector: 'Redes Sociais', title: 'Como criar um card para Instagram no padrão Lebes', duration: '8 min' },
-  { id: 2, sector: 'Redes Sociais', title: 'Tamanhos e formatos para Stories e Feed', duration: '5 min' },
-  { id: 3, sector: 'Comunicação', title: 'Hierarquia de oferta: preço, produto e marca', duration: '12 min' },
-  { id: 4, sector: 'Campanhas', title: 'Como usar o Estúdio Criativo para criar revistas', duration: '15 min' },
-  { id: 5, sector: 'Campanhas', title: 'Exportando peças para gráfica (PDF/CMYK)', duration: '7 min' },
-  { id: 6, sector: 'Comunicação', title: 'Tom de voz Lebes: como escrever textos de oferta', duration: '10 min' },
+const SECTORES = [
+  { id: 'redes', title: 'Redes Sociais', desc: 'Posts, stories e formatos para Instagram', count: 8, Icon: Smartphone },
+  { id: 'com', title: 'Comunicação', desc: 'Comunicados, e-mails e materiais internos', count: 5, Icon: Volume2 },
+  { id: 'camp', title: 'Campanhas', desc: 'Encartes, revistas e peças de campanha', count: 12, Icon: Tag },
 ];
 
 const CONTATOS = [
-  { name: 'Coordenação de Marketing', email: 'marketing@lebes.com.br', phone: '(51) 3300-0000' },
-  { name: 'Criação & Design', email: 'criacao@lebes.com.br', phone: '(51) 3300-0001' },
-  { name: 'Trade Marketing', email: 'trade@lebes.com.br', phone: '(51) 3300-0002' },
-  { name: 'Mídias Sociais', email: 'social@lebes.com.br', phone: '(51) 3300-0003' },
-  { name: 'Campanhas & Promoções', email: 'campanhas@lebes.com.br', phone: '(51) 3300-0004' },
+  { initials: 'M—', color: '#5ca847', name: 'Marketing — Geral', role: 'Dúvidas gerais e solicitações', email: 'setor.marketing@lebes.com.br', phone: '(51) 3000-1000' },
+  { initials: 'C&', color: '#e0913a', name: 'Criação & Design', role: 'Cards, revistas e materiais visuais', email: 'criacao@lebes.com.br', phone: '(51) 3000-1010' },
+  { initials: 'C', color: '#3878a8', name: 'PDV', role: 'Cartazes, etiquetas e materiais de loja', email: 'pdv@lebes.com.br', phone: '(51) 3000-1020' },
+  { initials: 'RS', color: '#8b5c9e', name: 'Redes Sociais', role: 'Instagram, conteúdo e calendário', email: 'social@lebes.com.br', phone: '(51) 3000-1030' },
 ];
 
-const SECTOR_COLORS = {
-  'Redes Sociais': '#5CA847',
-  'Comunicação': '#3878A8',
-  'Campanhas': '#E0913A',
-};
+function SectionCards({ active, onSelect }) {
+  return (
+    <div className="flex gap-5 w-full">
+      {SECTION_CARDS.map(({ id, title, desc, Icon }) => {
+        const isActive = active === id;
+        return (
+          <button
+            key={id}
+            onClick={() => onSelect(id)}
+            className={`flex-1 flex flex-col items-start pt-8 pb-7 px-7 rounded-[20px] text-left transition-all ${
+              isActive
+                ? 'bg-[#fce8e8] border border-[#c0392b]'
+                : 'bg-[#e8f0e4] border border-transparent hover:brightness-95'
+            }`}
+          >
+            <div className="w-16 h-16 rounded-[17px] bg-[#c0392b] flex items-center justify-center shrink-0">
+              <Icon size={22} color="#fff" fill={id === 'tutoriais' ? '#fff' : undefined} />
+            </div>
+            <div className="h-5" />
+            <p className="font-bold text-[21px] text-[#606060] tracking-[-0.42px]">{title}</p>
+            <div className="h-2" />
+            <p className="font-normal text-[13px] text-[#606060] leading-[19px]">{desc}</p>
+            <div className="h-[22px]" />
+            <div className="flex items-center gap-[7px]">
+              <span className="font-semibold text-[13px] text-[#c0392b]">Acessar</span>
+              {isActive
+                ? <ArrowDown size={13} color="#c0392b" />
+                : <ArrowRight size={13} color="#c0392b" />}
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 function TutoriaisContent() {
-  const sectors = [...new Set(TUTORIAIS.map(t => t.sector))];
   return (
-    <div className="flex flex-col gap-8 max-w-3xl mx-auto">
-      {sectors.map(sector => (
-        <div key={sector}>
-          <h3 className="font-semibold text-[15px] mb-3 flex items-center gap-2" style={{ color: 'var(--hub-text)' }}>
-            <span
-              className="inline-block w-2.5 h-2.5 rounded-full"
-              style={{ background: SECTOR_COLORS[sector] || '#5CA847' }}
-            />
-            {sector}
-          </h3>
-          <div className="flex flex-col gap-2">
-            {TUTORIAIS.filter(t => t.sector === sector).map(tut => (
-              <div
-                key={tut.id}
-                className="flex items-center gap-4 rounded-xl p-4 border cursor-pointer transition-all group"
-                style={{ background: 'var(--hub-card)', borderColor: 'var(--hub-border)' }}
-                onMouseEnter={e => e.currentTarget.style.borderColor = '#5CA84760'}
-                onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--hub-border)'}
-              >
-                <div className="w-10 h-10 rounded-lg bg-[#E8F0E4] flex items-center justify-center shrink-0">
-                  <Play size={14} color="#5CA847" fill="#5CA847" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-[14px] truncate" style={{ color: 'var(--hub-text)' }}>{tut.title}</p>
-                  <p className="text-[12px]" style={{ color: 'var(--hub-text-subtle)' }}>{tut.duration}</p>
-                </div>
-                <ChevronRight size={16} style={{ color: 'var(--hub-text-subtle)' }} />
-              </div>
-            ))}
+    <div className="flex gap-4 w-full mt-6">
+      {SECTORES.map(({ id, title, desc, count, Icon }) => (
+        <button
+          key={id}
+          className="flex-1 bg-[#e8f0e4] rounded-[18px] px-5 py-[26px] text-left hover:brightness-95 transition-all"
+        >
+          <div className="w-[52px] h-[52px] bg-[#c0392b] rounded-[14px] flex items-center justify-center">
+            <Icon size={20} color="#fff" />
           </div>
-        </div>
+          <div className="h-4" />
+          <p className="font-semibold text-[17px] text-[#606060]">{title}</p>
+          <div className="h-1" />
+          <p className="font-normal text-[12.5px] text-[#606060]">{desc}</p>
+          <div className="h-3.5" />
+          <p className="font-semibold text-[11.5px] text-[#c0392b]">{count} tutoriais →</p>
+        </button>
       ))}
     </div>
   );
 }
 
 function FAQContent() {
-  const [open, setOpen] = useState(null);
-  const FAQS = [
-    { q: 'Como acesso o Estúdio Criativo?', a: 'No Hub de Marketing, clique em "Estúdio Criativo". Você poderá criar cards, revistas e cartazes no padrão Lebes.' },
-    { q: 'Posso exportar as peças em PDF?', a: 'Sim! No editor, use o botão "Exportar" no topo e selecione PDF. O sistema gera um arquivo pronto para impressão.' },
-    { q: 'Onde encontro os materiais das campanhas?', a: 'Na Central de Campanhas você encontra todos os arquivos (logos, áudios, kits) organizados por categoria.' },
-    { q: 'Qual fonte devo usar nas comunicações?', a: 'A fonte padrão da Lebes é Gantari. Consulte a Central das Marcas para ver o guia completo de tipografia.' },
-    { q: 'Como solicitar um novo material?', a: 'Entre em contato com o time de Criação & Design pelo email criacao@lebes.com.br ou use o formulário na aba Contatos.' },
-  ];
-  return (
-    <div className="flex flex-col gap-2 max-w-3xl mx-auto">
-      {FAQS.map((faq, i) => (
-        <div key={i} className="rounded-xl border overflow-hidden" style={{ background: 'var(--hub-card)', borderColor: 'var(--hub-border)' }}>
-          <button
-            onClick={() => setOpen(open === i ? null : i)}
-            className="w-full flex items-center justify-between p-5 text-left transition-colors"
-            style={{ color: 'var(--hub-text)' }}
-            onMouseEnter={e => e.currentTarget.style.background = 'var(--hub-surface)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-          >
-            <span className="font-medium text-[14px]">{faq.q}</span>
-            <ChevronRight
-              size={16}
-              style={{
-                color: 'var(--hub-text-subtle)',
-                transform: open === i ? 'rotate(90deg)' : undefined,
-                transition: 'transform 0.15s',
-                flexShrink: 0,
-              }}
-            />
-          </button>
-          {open === i && (
-            <div
-              className="px-5 pb-5 pt-0 text-[13px] leading-relaxed"
-              style={{ borderTop: '1px solid var(--hub-border)', color: 'var(--hub-text-muted)' }}
-            >
-              {faq.a}
-            </div>
-          )}
+  const [assunto, setAssunto] = useState('');
+  const [mensagem, setMensagem] = useState('');
+  const [enviado, setEnviado] = useState(false);
+
+  if (enviado) {
+    return (
+      <div className="mt-6 w-[560px] mx-auto bg-white rounded-[18px] border border-[#e8e8e5] overflow-hidden">
+        <div className="bg-[#c0392b] px-[22px] py-[18px] flex items-center gap-3">
+          <div className="w-10 h-10 bg-white/20 rounded-[11px] flex items-center justify-center shrink-0">
+            <MessageSquare size={18} color="#fff" />
+          </div>
+          <p className="font-bold text-[17px] text-white">Mensagem enviada!</p>
         </div>
-      ))}
+        <div className="p-[22px] text-center">
+          <p className="text-[14px] text-[#606060] mb-5">O time de marketing receberá sua mensagem em breve.</p>
+          <button
+            onClick={() => { setEnviado(false); setAssunto(''); setMensagem(''); }}
+            className="bg-[#f7f6f2] border border-[#e8e8e5] text-[#606060] font-medium text-[13px] px-5 py-2.5 rounded-[10px]"
+          >
+            Enviar outra mensagem
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-6 w-[560px] mx-auto bg-white rounded-[18px] border border-[#e8e8e5] overflow-hidden">
+      <div className="bg-[#c0392b] px-[22px] py-[18px] flex items-center gap-3">
+        <div className="w-10 h-10 bg-white/20 rounded-[11px] flex items-center justify-center shrink-0">
+          <MessageSquare size={18} color="#fff" />
+        </div>
+        <div>
+          <p className="font-bold text-[17px] text-white">Não achou o que procurava?</p>
+          <p className="font-light text-[12.5px] text-white/85">Mande sua dúvida direto pro time de marketing.</p>
+        </div>
+      </div>
+      <div className="p-[22px] flex flex-col gap-4">
+        <div>
+          <p className="font-semibold text-[12.5px] text-[#2e2e2e] mb-[7px]">Assunto</p>
+          <select
+            value={assunto}
+            onChange={e => setAssunto(e.target.value)}
+            className="w-full h-[44px] border border-[#e8e8e5] rounded-[11px] px-[14px] text-[13px] text-[#606060] bg-white"
+          >
+            <option value="">Selecione: dúvida, novo material, ajuste...</option>
+            <option value="duvida">Dúvida</option>
+            <option value="material">Novo material</option>
+            <option value="ajuste">Ajuste</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+        <div>
+          <p className="font-semibold text-[12.5px] text-[#2e2e2e] mb-[7px]">Mensagem</p>
+          <textarea
+            value={mensagem}
+            onChange={e => setMensagem(e.target.value)}
+            placeholder="Escreva sua mensagem para o time de marketing..."
+            rows={4}
+            className="w-full border border-[#e8e8e5] rounded-[11px] px-[14px] py-[12px] text-[13px] text-[#2e2e2e] placeholder-[#999] bg-white resize-none"
+          />
+        </div>
+        <button
+          onClick={() => { if (assunto && mensagem) setEnviado(true); }}
+          className="w-full bg-[#5ca847] rounded-[12px] py-[14px] flex items-center justify-center gap-2 text-white font-semibold text-[14px] hover:bg-[#4a9438] transition-colors"
+        >
+          <Mail size={16} color="#fff" />
+          Enviar mensagem
+        </button>
+      </div>
     </div>
   );
 }
 
 function ContatosContent() {
   return (
-    <div className="grid grid-cols-2 gap-4 max-w-3xl mx-auto">
+    <div className="mt-6 flex flex-col gap-3 w-[760px] mx-auto">
       {CONTATOS.map(c => (
         <div
           key={c.name}
-          className="rounded-xl p-5 border"
-          style={{ background: 'var(--hub-card)', borderColor: 'var(--hub-border)' }}
+          className="bg-white border border-[#e8e8e5] rounded-[14px] px-5 py-4 flex items-center gap-4"
         >
-          <p className="font-semibold text-[14px] mb-3" style={{ color: 'var(--hub-text)' }}>{c.name}</p>
-          <div className="flex flex-col gap-1.5">
-            <a
-              href={`mailto:${c.email}`}
-              className="flex items-center gap-2 text-[13px] hover:underline"
-              style={{ color: '#3878A8' }}
-            >
-              <Mail size={13} /> {c.email}
+          <div
+            className="w-[46px] h-[46px] rounded-full flex items-center justify-center shrink-0"
+            style={{ background: c.color }}
+          >
+            <span className="font-bold text-[15px] text-white">{c.initials}</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-[15px] text-[#2e2e2e]">{c.name}</p>
+            <p className="font-normal text-[12px] text-[#606060]">{c.role}</p>
+          </div>
+          <div className="text-right shrink-0">
+            <a href={`mailto:${c.email}`} className="font-medium text-[12.5px] text-[#5ca847] block hover:underline">
+              {c.email}
             </a>
-            <div className="flex items-center gap-2 text-[13px]" style={{ color: 'var(--hub-text-muted)' }}>
-              <Phone size={13} /> {c.phone}
-            </div>
+            <p className="font-normal text-[12px] text-[#999]">{c.phone}</p>
           </div>
         </div>
       ))}
@@ -179,120 +203,42 @@ function ContatosContent() {
 export default function CentralApoio({ onMenu, onBack, onHome, isDark, onToggleTheme }) {
   const [section, setSection] = useState(null);
 
-  if (!section) {
-    return (
-      <div
-        className="w-full h-screen flex flex-col overflow-hidden"
-        style={{ background: 'var(--hub-bg)', fontFamily: 'Gantari, system-ui, sans-serif' }}
-      >
-        <HubHeader
-          variant="inner"
-          title="Central de Apoio"
-          onMenu={onMenu}
-          onBack={onBack}
-          onHome={onHome}
-          isDark={isDark}
-          onToggleTheme={onToggleTheme}
-        />
-
-        <main className="flex-1 flex items-center justify-center px-10">
-          <div className="text-center w-full max-w-[1040px]">
-            <h1 className="font-bold text-[34px] mb-2" style={{ color: 'var(--hub-text)' }}>
-              Central de Apoio
-            </h1>
-            <p className="text-[15px] font-light mb-12" style={{ color: 'var(--hub-text-muted)' }}>
-              Como podemos te ajudar? Escolha uma opção abaixo
-            </p>
-
-            <div className="grid grid-cols-3 gap-4">
-              {OPTIONS.map(({ id, title, desc, Icon, lightBg, darkBg, iconBg, titleColor, descColor, linkColor }) => (
-                <div
-                  key={id}
-                  className="rounded-2xl p-7 flex flex-col gap-4 text-left cursor-pointer hover:brightness-95 transition-all"
-                  style={{ background: isDark ? darkBg : lightBg }}
-                  onClick={() => setSection(id)}
-                >
-                  <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center"
-                    style={{ background: iconBg }}
-                  >
-                    <Icon size={20} color="#fff" fill={id === 'tutoriais' ? '#fff' : undefined} />
-                  </div>
-                  <div>
-                    <p className="font-bold text-[18px] mb-1" style={{ color: isDark ? titleColor.dark : titleColor.light }}>
-                      {title}
-                    </p>
-                    <p className="text-[13px] leading-relaxed" style={{ color: isDark ? descColor.dark : descColor.light }}>
-                      {desc}
-                    </p>
-                  </div>
-                  <button
-                    className="self-start flex items-center gap-1.5 font-semibold text-[13px] hover:underline"
-                    style={{ color: linkColor }}
-                    onClick={() => setSection(id)}
-                  >
-                    Acessar <ArrowRight size={13} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  const tabs = ['Tutoriais', 'FAQ', 'Contatos'];
-  const tabIds = { 'Tutoriais': 'tutoriais', 'FAQ': 'faq', 'Contatos': 'contatos' };
+  const handleBack = section ? () => setSection(null) : onBack;
 
   return (
     <div
-      className="w-full h-screen flex flex-col overflow-hidden"
-      style={{ background: 'var(--hub-bg)', fontFamily: 'Gantari, system-ui, sans-serif' }}
+      className="w-full h-screen flex flex-col overflow-hidden bg-[#f7f6f2]"
+      style={{ fontFamily: 'Gantari, system-ui, sans-serif' }}
     >
       <HubHeader
         variant="inner"
         title="Central de Apoio"
         onMenu={onMenu}
-        onBack={() => setSection(null)}
+        onBack={handleBack}
         onHome={onHome}
         isDark={isDark}
         onToggleTheme={onToggleTheme}
       />
 
-      <main className="flex-1 overflow-y-auto px-10 py-8">
-        <h1 className="font-bold text-[28px] mb-1" style={{ color: 'var(--hub-text)' }}>
-          Central de Apoio
-        </h1>
-        <p className="text-[14px] font-light mb-6" style={{ color: 'var(--hub-text-muted)' }}>
-          Encontre tutoriais, tire dúvidas ou fale com o time de marketing.
-        </p>
+      <main
+        className={`flex-1 overflow-y-auto px-10 ${!section ? 'flex items-center justify-center py-10' : 'py-8'}`}
+      >
+        <div className={`w-full max-w-[1040px] mx-auto`}>
+          <div className={`${!section ? 'text-center' : ''} mb-10`}>
+            <h1 className="font-bold text-[34px] text-[#2e2e2e] tracking-[-0.68px] mb-2">
+              Central de Apoio
+            </h1>
+            <p className="font-light text-[15px] text-[#606060]">
+              Como podemos te ajudar? Escolha uma opção abaixo
+            </p>
+          </div>
 
-        {/* tabs */}
-        <div className="flex items-center gap-1 mb-8">
-          {tabs.map(tab => {
-            const id = tabIds[tab];
-            const isActive = section === id;
-            return (
-              <button
-                key={tab}
-                onClick={() => setSection(id)}
-                className="px-4 py-1.5 rounded-lg text-[13px] font-medium transition-colors border"
-                style={{
-                  background: isActive ? '#5CA847' : 'var(--hub-card)',
-                  color: isActive ? '#fff' : 'var(--hub-text-muted)',
-                  borderColor: isActive ? '#5CA847' : 'var(--hub-border)',
-                }}
-              >
-                {tab}
-              </button>
-            );
-          })}
+          <SectionCards active={section} onSelect={setSection} />
+
+          {section === 'tutoriais' && <TutoriaisContent />}
+          {section === 'faq' && <FAQContent />}
+          {section === 'contatos' && <ContatosContent />}
         </div>
-
-        {section === 'tutoriais' && <TutoriaisContent />}
-        {section === 'faq' && <FAQContent />}
-        {section === 'contatos' && <ContatosContent />}
       </main>
     </div>
   );

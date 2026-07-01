@@ -29,6 +29,9 @@ import StudioHome from './views/StudioHome';
 import CentralMarcas from './views/CentralMarcas';
 import CentralCampanhas from './views/CentralCampanhas';
 import CentralApoio from './views/CentralApoio';
+import AdminLebes from './views/AdminLebes';
+import Error404 from './views/Error404';
+import LoginScreen from './views/LoginScreen';
 import HubDrawer from './components/hub/HubDrawer';
 
 import CanvasElement from './components/canvas/CanvasElement';
@@ -913,6 +916,10 @@ Exportado em: ${new Date().toLocaleString('pt-BR')}
     />
   );
 
+  if (view === 'login') {
+    return <LoginScreen onLogin={(role) => navigate(role)} />;
+  }
+
   if (view === 'hub') {
     return (
       <>
@@ -920,6 +927,7 @@ Exportado em: ${new Date().toLocaleString('pt-BR')}
         <HubHome
           onNavigate={navigate}
           onMenu={() => setShowDrawer(true)}
+          onLogin={() => navigate('login')}
           {...hubProps}
         />
       </>
@@ -997,6 +1005,18 @@ Exportado em: ${new Date().toLocaleString('pt-BR')}
         />
       </>
     );
+  }
+
+  if (view === 'admin') {
+    return <AdminLebes onBack={navBack} onHome={navHome} />;
+  }
+
+  if (view === '404') {
+    return <Error404 code={404} onHome={navHome} />;
+  }
+
+  if (view === '403') {
+    return <Error404 code={403} onHome={navHome} />;
   }
 
   if (view === 'home') {

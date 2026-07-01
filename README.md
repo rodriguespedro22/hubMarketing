@@ -40,7 +40,7 @@ npm install
 npm run dev
 ```
 
-Acesse em `http://localhost:5173`.
+Acessar em `http://localhost:5173`.
 
 ### Back-end (exportação de PDF)
 

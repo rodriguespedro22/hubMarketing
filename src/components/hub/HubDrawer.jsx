@@ -1,4 +1,4 @@
-import { X, LayoutGrid, Folder, Star, MessageCircle, LayoutDashboard } from 'lucide-react';
+import { X, LayoutGrid, Folder, Star, MessageCircle, LayoutDashboard, ShieldCheck } from 'lucide-react';
 
 const ITEMS = [
   { id: 'hub',       label: 'Hub de Marketing',    icon: LayoutDashboard, color: '#5CA847' },
@@ -6,6 +6,7 @@ const ITEMS = [
   { id: 'campanhas', label: 'Central de Campanhas', icon: Folder,          color: '#E0913A' },
   { id: 'marcas',    label: 'Central das Marcas',   icon: Star,            color: '#3878A8' },
   { id: 'apoio',     label: 'Central de Apoio',     icon: MessageCircle,   color: '#8B5C9E' },
+  { id: 'admin',     label: 'Admin',                icon: ShieldCheck,     color: '#C0392B' },
 ];
 
 export default function HubDrawer({ open, currentView, onNavigate, onClose, isDark }) {

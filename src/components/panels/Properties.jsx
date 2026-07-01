@@ -301,16 +301,6 @@ export default function Properties({ el, onChange, onLayer, onDelete, onDuplicat
         </div>
       )}
 
-      {/* Layer controls */}
-      <div className="pt-2 border-t border-stone-800/60">
-        <span className="text-[9px] uppercase tracking-wider text-stone-500">Camada</span>
-        <div className="flex gap-1 mt-1.5">
-          <IconBtn title="Trazer para frente" onClick={() => onLayer(el.id, 'front')}><ArrowUpToLine size={13} /></IconBtn>
-          <IconBtn title="Avançar" onClick={() => onLayer(el.id, 'up')}><MoveUp size={13} /></IconBtn>
-          <IconBtn title="Recuar" onClick={() => onLayer(el.id, 'down')}><MoveDown size={13} /></IconBtn>
-          <IconBtn title="Enviar para trás" onClick={() => onLayer(el.id, 'back')}><ArrowDownToLine size={13} /></IconBtn>
-        </div>
-      </div>
     </div>
   );
 }
