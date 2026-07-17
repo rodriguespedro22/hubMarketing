@@ -34,16 +34,6 @@ editorLebes/
 ├── postcss.config.js
 ├── package.json
 │
-├── backend/                        ← API Node/Express (branch dev)
-│   ├── .env.example
-│   └── src/
-│       ├── index.js                ← Express, CORS, body limit 50mb
-│       ├── routes/
-│       │   ├── export.js           ← POST /api/export/pdf
-│       │   └── products.js         ← GET /api/products (placeholder)
-│       └── services/
-│           └── pdfService.js       ← Chromium headless via Playwright
-│
 └── src/
     ├── main.jsx                    ← Ponto de entrada React
     ├── App.jsx                     ← Estado principal, roteamento multi-view
