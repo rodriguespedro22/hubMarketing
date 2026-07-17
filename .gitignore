@@ -6,4 +6,6 @@ backend/.env
 claude.md
 # Claude
 .claude/
+AGENTS.md
+.mcp.json
 /ux-screenshots/
