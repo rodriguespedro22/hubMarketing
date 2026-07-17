@@ -82,6 +82,12 @@ input[type='number']::-webkit-inner-spin-button {
   opacity: 0.3;
 }
 
+/* ── Barra de progresso indeterminada (toast de download) ─────────────── */
+@keyframes download-progress-indeterminate {
+  0%   { transform: translateX(-60%); }
+  100% { transform: translateX(160%); }
+}
+
 /* ── Aurora hero banner ─────────────────────────────────────────────── */
 @keyframes aurora-1 {
   0%, 100% { transform: translateY(-50%) translateX(0)   scale(1);    }

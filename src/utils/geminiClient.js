@@ -1,18 +1,13 @@
 // ============================================================
 // GEMINI CLIENT — geração de páginas via Gemini 2.5 Flash
 // ------------------------------------------------------------
-// MODO PROTÓTIPO (v0): a chave da API é fornecida pelo usuário e
-// guardada apenas em localStorage (lebes:gemini:key). NUNCA é
-// commitada. A chamada sai direto do navegador para a API do
+// PROTÓTIPO: a chave da API é fornecida pelo usuário e
+// guardada apenas em localStorage. A chamada sai direto do navegador para a API do
 // Google AI. Em produção, isto deve ser movido para um proxy
 // backend que guarda a chave em variável de ambiente — a
 // assinatura de generateMagazineGemini() é a mesma de
 // generateMagazine() (motor local), então trocar o destino da
 // chamada não afeta a UI.
-//
-// Endpoint REST:
-//   POST https://generativelanguage.googleapis.com/v1beta/models/
-//        gemini-2.5-flash:generateContent?key=API_KEY
 // Saída estruturada via generationConfig.responseSchema +
 // responseMimeType "application/json".
 // ============================================================

@@ -11,12 +11,14 @@ import {
   MoveDown,
   MoveUp,
   Pipette,
+  Scissors,
+  Strikethrough,
   Trash2,
   Unlock,
   X,
 } from 'lucide-react';
 
-import { PRODUCTS } from '../../data/products';
+import { findProductById } from '../../data/ci';
 import IconBtn from '../ui/IconBtn';
 import NumField from '../ui/NumField';
 
@@ -73,7 +75,7 @@ function SizeInput({ value, min, max, onChange }) {
   );
 }
 
-export default function Properties({ el, onChange, onLayer, onDelete, onDuplicate, onToggleLock, onCopyFormat, onPasteFormat, hasFormatClipboard, pasteCount }) {
+export default function Properties({ el, onChange, onLayer, onDelete, onDuplicate, onToggleLock, onCopyFormat, onPasteFormat, hasFormatClipboard, pasteCount, onUngroupProduct }) {
   if (!el) return null;
   const set = (patch) => onChange(el.id, patch);
 
@@ -138,13 +140,56 @@ export default function Properties({ el, onChange, onLayer, onDelete, onDuplicat
         </div>
       )}
 
-      {/* Box fill */}
+      {/* Box fill + border */}
       {el.type === 'box' && (
-        <label className="flex items-center justify-between">
-          <span className="text-[9px] uppercase tracking-wider text-stone-500">Cor de preenchimento</span>
-          <input type="color" value={el.fill || '#e5006d'} onChange={e => set({ fill: e.target.value })}
-            className="w-8 h-7 rounded bg-transparent border border-stone-700 cursor-pointer" />
-        </label>
+        <div className="space-y-2.5">
+          <label className="flex items-center justify-between">
+            <span className="text-[9px] uppercase tracking-wider text-stone-500">Cor de preenchimento</span>
+            <input type="color"
+              value={el.fill === 'transparent' ? (el.lastFill || '#e5006d') : (el.fill || '#e5006d')}
+              disabled={el.fill === 'transparent'}
+              onChange={e => set({ fill: e.target.value, lastFill: e.target.value })}
+              className="w-8 h-7 rounded bg-transparent border border-stone-700 cursor-pointer disabled:opacity-40" />
+          </label>
+          <label className="flex items-center justify-between gap-2 cursor-pointer">
+            <span className="text-[10px] text-stone-300">Sem fundo (transparente)</span>
+            <Toggle
+              on={el.fill === 'transparent'}
+              onChange={() => set(el.fill === 'transparent'
+                ? { fill: el.lastFill || '#e5006d' }
+                : { fill: 'transparent', lastFill: el.fill && el.fill !== 'transparent' ? el.fill : el.lastFill })}
+            />
+          </label>
+
+          <div>
+            <span className="text-[9px] uppercase tracking-wider text-stone-500">Borda</span>
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              <NumField label="Espessura" value={el.borderW || 0} min={0} max={40} onChange={v => set({ borderW: v })} />
+              <label className="block">
+                <span className="text-[9px] uppercase tracking-wider text-stone-500">Cor</span>
+                <input type="color" value={el.borderColor || '#000000'} onChange={e => set({ borderColor: e.target.value })}
+                  className="w-full h-7 rounded bg-transparent border border-stone-700 cursor-pointer mt-0.5" />
+              </label>
+            </div>
+            {(el.borderW || 0) > 0 && (
+              <div className="flex gap-1 mt-1.5">
+                {[
+                  { id: 'solid',  label: 'Sólida' },
+                  { id: 'dashed', label: 'Tracejada' },
+                  { id: 'dotted', label: 'Pontilhada' },
+                ].map(({ id, label }) => (
+                  <button key={id} onClick={() => set({ borderStyle: id })}
+                    className={`flex-1 text-[10px] py-1 rounded transition ${
+                      (el.borderStyle || 'solid') === id ? 'bg-emerald-700 text-white' : 'bg-stone-900 text-stone-400 hover:text-stone-200'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Text props */}
@@ -165,6 +210,7 @@ export default function Properties({ el, onChange, onLayer, onDelete, onDuplicat
           </div>
           <div className="flex items-center gap-1.5">
             <IconBtn title="Negrito" active={el.weight >= 700} onClick={() => set({ weight: el.weight >= 700 ? 400 : 800 })}><Bold size={13} /></IconBtn>
+            <IconBtn title="Tachado" active={!!el.strike} onClick={() => set({ strike: !el.strike })}><Strikethrough size={13} /></IconBtn>
             <div className="w-px h-5 bg-stone-800" />
             <IconBtn title="Esquerda" active={el.align === 'left'} onClick={() => set({ align: 'left' })}><AlignLeft size={13} /></IconBtn>
             <IconBtn title="Centro" active={el.align === 'center'} onClick={() => set({ align: 'center' })}><AlignCenter size={13} /></IconBtn>
@@ -184,12 +230,18 @@ export default function Properties({ el, onChange, onLayer, onDelete, onDuplicat
       {el.type === 'product' && (
         <div className="text-[10px] text-stone-500 bg-stone-900/50 rounded p-2 leading-relaxed">
           {el.productId
-            ? <>Vinculado a <span className="text-emerald-400 font-semibold">{PRODUCTS.find(p => p.id === el.productId)?.name}</span>. Clique noutro produto do catálogo para trocar, ou no X abaixo para esvaziar.</>
+            ? <>Vinculado a <span className="text-emerald-400 font-semibold">{findProductById(el.productId)?.name}</span>. Clique noutro produto do catálogo para trocar, ou no X abaixo para esvaziar.</>
             : <>Slot vazio. Com ele selecionado, clique num produto do catálogo para preencher.</>}
           {el.productId && (
-            <button onClick={() => set({ productId: null })} className="mt-1.5 text-rose-400 hover:text-rose-300 flex items-center gap-1">
-              <X size={11} /> Esvaziar slot
-            </button>
+            <div className="flex items-center gap-3 mt-1.5">
+              <button onClick={() => set({ productId: null })} className="text-rose-400 hover:text-rose-300 flex items-center gap-1">
+                <X size={11} /> Esvaziar slot
+              </button>
+              <button onClick={() => onUngroupProduct(el.id)} className="text-stone-300 hover:text-white flex items-center gap-1"
+                title="Transforma a box em elementos soltos (imagem, marca, nome, código, preço) para ajustar cada um individualmente">
+                <Scissors size={11} /> Desagrupar
+              </button>
+            </div>
           )}
         </div>
       )}
@@ -197,6 +249,27 @@ export default function Properties({ el, onChange, onLayer, onDelete, onDuplicat
       {/* ── Produto: posição da imagem ─────────────────────────────── */}
       {el.type === 'product' && (
         <div className="space-y-3">
+          {layout !== 'card' && (
+            <div>
+              <span className="text-[9px] uppercase tracking-wider text-stone-500">Fundo do slot</span>
+              <div className="flex items-center gap-2 mt-1.5">
+                <input type="color"
+                  value={el.fill === 'transparent' ? (el.lastFill || '#ffffff') : (el.fill || '#ffffff')}
+                  disabled={el.fill === 'transparent'}
+                  onChange={e => set({ fill: e.target.value, lastFill: e.target.value })}
+                  className="w-8 h-7 rounded bg-transparent border border-stone-700 cursor-pointer disabled:opacity-40" />
+                <label className="flex items-center justify-between gap-2 cursor-pointer flex-1">
+                  <span className="text-[10px] text-stone-300">Sem fundo (transparente)</span>
+                  <Toggle
+                    on={el.fill === 'transparent'}
+                    onChange={() => set(el.fill === 'transparent'
+                      ? { fill: el.lastFill || '#ffffff' }
+                      : { fill: 'transparent', lastFill: el.fill && el.fill !== 'transparent' ? el.fill : el.lastFill })}
+                  />
+                </label>
+              </div>
+            </div>
+          )}
           <div>
             <span className="text-[9px] uppercase tracking-wider text-stone-500">Posição da imagem</span>
             <div className="grid grid-cols-3 gap-1 mt-1.5">

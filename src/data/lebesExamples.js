@@ -1,16 +1,8 @@
 // ============================================================
 // LEBES EXAMPLES — páginas "padrão de ouro" (few-shot)
 // ------------------------------------------------------------
-// Exemplos de páginas BEM montadas no padrão Lebes, no mesmo
-// schema que o editor entende. São injetados no prompt do
-// Gemini como referência de estilo: espaçamento, hierarquia de
-// títulos, organização de grade e uso de cor. O modelo aprende
-// o padrão COPIANDO estes exemplos a cada chamada (few-shot),
-// já que a API não tem memória entre requisições.
-//
-// Dimensões de referência: Padrão Lebes 548 x 599, margem 28.
-// Para adicionar um novo exemplo, salve uma página boa no editor
-// e cole aqui o objeto { background, kind, elements:[...] }.
+// Exemplos de templates montadas no padrão Lebes, no mesmo
+// schema que o editor entende.
 // ============================================================
 
 export const LEBES_EXAMPLES = [

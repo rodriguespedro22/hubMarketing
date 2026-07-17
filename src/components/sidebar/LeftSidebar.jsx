@@ -1,7 +1,8 @@
-import { useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   Award,
   ChevronDown,
+  ChevronLeft,
   Download,
   FileUp,
   FolderOpen,
@@ -23,7 +24,7 @@ import {
 } from 'lucide-react';
 
 import { ICONS } from '../../data/icons';
-import { PRODUCTS, SECTORS } from '../../data/products';
+import { loadCIs, getOfertaStatus, ofertaToProduct } from '../../data/ci';
 import { BRAND_ASSETS } from '../../data/brandAssets';
 import { TEMPLATES } from '../../data/templates';
 import { fmt } from '../../utils/helpers';
@@ -147,56 +148,105 @@ function ElementosPanel({ onAddText, onAddBox, onAddProductBox, onGenGrid, onIns
   );
 }
 
-// ---- Produtos ----
+// ---- Produtos (por CI) ----
+function ofertasDisponiveis(ci) {
+  return ci.ofertas.filter(o => o.visivel && getOfertaStatus(o) === 'Ativa');
+}
+
 function ProdutosPanel({ onAdd, placedIds }) {
+  const [cis] = useState(() => loadCIs());
+  const [selectedCIId, setSelectedCIId] = useState(null);
   const [q, setQ] = useState('');
-  const [sector, setSector] = useState('all');
-  const list = useMemo(() => PRODUCTS.filter(p =>
-    (sector === 'all' || p.sector === sector) &&
-    (!q || (p.name + p.brand + p.code).toLowerCase().includes(q.toLowerCase()))
-  ), [q, sector]);
+
+  const selectedCI = cis.find(ci => ci.id === selectedCIId) || null;
+
+  if (selectedCI) {
+    const ofertas = ofertasDisponiveis(selectedCI).filter(o =>
+      !q || o.nome.toLowerCase().includes(q.toLowerCase())
+    );
+    return (
+      <>
+        <div className="p-3 border-b border-stone-800/60">
+          <button
+            onClick={() => { setSelectedCIId(null); setQ(''); }}
+            className="flex items-center gap-1 text-[11px] text-stone-400 hover:text-emerald-300 transition mb-2.5"
+          >
+            <ChevronLeft size={13} /> {selectedCI.nome}
+          </button>
+          <div className="flex items-center gap-1.5 mb-2.5">
+            <span className="text-xs font-bold text-stone-100">Produtos</span>
+            <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-stone-800 text-stone-400 font-semibold">do admin</span>
+          </div>
+          <div className="relative">
+            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-500" />
+            <input value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar…"
+              className="w-full bg-stone-900/60 border border-stone-800 rounded-lg pl-8 pr-2 py-1.5 text-xs text-stone-100 placeholder-stone-600 focus:outline-none focus:border-emerald-700/60" />
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5">
+          {ofertas.length === 0 ? (
+            <p className="text-[10px] text-stone-600 italic text-center py-6 px-2 leading-relaxed">
+              Nenhuma oferta ativa e visível nesta CI no momento.
+            </p>
+          ) : ofertas.map(oferta => {
+            const p = ofertaToProduct(oferta);
+            const Icon = ICONS[p.iconName] || Square;
+            const placed = placedIds.has(p.id);
+            return (
+              <button key={p.id} onClick={() => onAdd(p)}
+                className={`group w-full text-left p-2 rounded-xl border transition-all ${placed ? 'bg-emerald-950/40 border-emerald-700/40' : 'bg-stone-900/40 border-stone-700/50 hover:border-emerald-500/60 hover:bg-stone-900/80'}`}>
+                <div className="flex gap-2.5 items-center">
+                  <div className={`shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${placed ? 'bg-emerald-900/50' : 'bg-stone-800/80'}`}>
+                    <Icon size={20} className={placed ? 'text-emerald-400' : 'text-stone-400'} strokeWidth={1.5} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[9px] uppercase tracking-widest text-stone-500">{p.brand}</div>
+                    <div className="text-xs text-stone-100 font-medium truncate">{p.name}</div>
+                    <div className="text-[11px] text-emerald-400 font-mono">R$ {fmt(p.priceCash)}</div>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </>
+    );
+  }
+
+  const filteredCIs = cis.filter(ci => !q || ci.nome.toLowerCase().includes(q.toLowerCase()));
 
   return (
     <>
       <div className="p-3 border-b border-stone-800/60">
-        <div className="relative mb-2.5">
-          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-500" />
-          <input value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar produto…"
-            className="w-full bg-stone-900/60 border border-stone-800 rounded-lg pl-8 pr-2 py-1.5 text-xs text-stone-100 placeholder-stone-600 focus:outline-none focus:border-emerald-700/60" />
+        <div className="flex items-center justify-between mb-2.5">
+          <span className="text-xs font-bold text-stone-100">Selecione uma CI</span>
+          <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-emerald-900/50 text-emerald-300 font-semibold">{cis.length} disponíveis</span>
         </div>
-        <div className="flex flex-wrap gap-1">
-          {SECTORS.map(s => (
-            <button key={s.id} onClick={() => setSector(s.id)}
-              className={`text-[9px] uppercase tracking-wider px-2 py-1 rounded-full font-semibold transition ${sector === s.id ? 'bg-emerald-700 text-white' : 'bg-stone-900 text-stone-400 border border-stone-800 hover:text-stone-200'}`}>
-              {s.label}
-            </button>
-          ))}
+        <div className="relative">
+          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-500" />
+          <input value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar CI…"
+            className="w-full bg-stone-900/60 border border-stone-800 rounded-lg pl-8 pr-2 py-1.5 text-xs text-stone-100 placeholder-stone-600 focus:outline-none focus:border-emerald-700/60" />
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5">
-        <p className="text-[10px] text-stone-500 italic px-1 mb-1">
-          Selecione um slot e clique no produto para preencher, ou clique para soltar novo.
-        </p>
-        {list.map(p => {
-          const Icon = ICONS[p.iconName] || Square;
-          const placed = placedIds.has(p.id);
-          return (
-            <button key={p.id} onClick={() => onAdd(p)}
-              className={`group w-full text-left p-2 rounded-xl border transition-all ${placed ? 'bg-emerald-950/40 border-emerald-700/40' : 'bg-stone-900/40 border-stone-700/50 hover:border-emerald-500/60 hover:bg-stone-900/80'}`}>
-              <div className="flex gap-2.5 items-center">
-                <div className={`shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${placed ? 'bg-emerald-900/50' : 'bg-stone-800/80'}`}>
-                  <Icon size={20} className={placed ? 'text-emerald-400' : 'text-stone-400'} strokeWidth={1.5} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-[9px] uppercase tracking-widest text-stone-500">{p.brand}</div>
-                  <div className="text-xs text-stone-100 font-medium truncate">{p.name}</div>
-                  <div className="text-[11px] text-emerald-400 font-mono">R$ {fmt(p.priceCash)}</div>
-                </div>
+        {filteredCIs.length === 0 ? (
+          <p className="text-[10px] text-stone-600 italic text-center py-6 px-2 leading-relaxed">Nenhuma CI encontrada.</p>
+        ) : filteredCIs.map(ci => (
+          <button key={ci.id} onClick={() => setSelectedCIId(ci.id)}
+            className="group w-full text-left p-2 rounded-xl border bg-stone-900/40 border-stone-700/50 hover:border-emerald-500/60 hover:bg-stone-900/80 transition-all">
+            <div className="flex gap-2.5 items-center">
+              <div className="shrink-0 w-10 h-10 rounded-lg flex items-center justify-center bg-stone-800/80">
+                <Package size={18} className="text-stone-400" strokeWidth={1.5} />
               </div>
-            </button>
-          );
-        })}
+              <div className="min-w-0 flex-1">
+                <div className="text-xs text-stone-100 font-medium truncate">{ci.nome}</div>
+                <div className="text-[11px] text-emerald-400 font-mono">{ofertasDisponiveis(ci).length} ofertas</div>
+              </div>
+            </div>
+          </button>
+        ))}
       </div>
     </>
   );

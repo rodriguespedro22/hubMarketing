@@ -4,14 +4,6 @@
 // Imagens reutilizáveis que o motor de IA (e o usuário) podem
 // inserir nas páginas. Ficam embutidas como data-URI (SVG) para
 // não dependerem de rede nem de upload.
-//
-// >>> TROCA DA LOGO OFICIAL <<<
-// Quando o arquivo oficial da logo chegar, basta substituir o
-// valor de LOGO_LEBES por um data-URI do arquivo real, por ex.:
-//   export const LOGO_LEBES = 'data:image/png;base64,iVBORw0K...';
-// Nada mais precisa mudar: o motor e o catálogo já referenciam
-// esta constante. As proporções recomendadas estão em
-// BRAND_ASSETS[].ratio (largura/altura) para posicionamento.
 // ============================================================
 
 import { COLORS } from '../constants/pageConfig';

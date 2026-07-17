@@ -1,5 +1,5 @@
 export const PRODUCTS = [
-  { id: 'p1', name: 'Smart TV 55"', brand: 'TCL', code: '873994', iconName: 'Tv', sector: 'eletro', priceOld: 4399, priceCash: 3899, installments: 20, installmentValue: 338 },
+  { id: 'p1', name: 'Smart TV 55"', brand: 'TCL', code: '873994', iconName: 'Tv', sector: 'eletro', priceOld: 4399, priceCash: 3899, installments: 25, installmentValue: 338 },
   { id: 'p2', name: 'Galaxy A07 128GB', brand: 'SAMSUNG', code: '869682', iconName: 'Smartphone', sector: 'eletro', priceCash: 999, installments: 15, installmentValue: 103 },
   { id: 'p3', name: 'Roupeiro CB01N565', brand: 'KAPPESBERG', code: '841783', iconName: 'Sofa', sector: 'eletro', priceOld: 3799.9, priceCash: 2999, installments: 15, installmentValue: 279 },
   { id: 'p4', name: 'Lavadora 18kg', brand: 'ELECTROLUX', code: '872891', iconName: 'Refrigerator', sector: 'eletro', priceCash: 2399.9, installments: 20, installmentValue: 208 },

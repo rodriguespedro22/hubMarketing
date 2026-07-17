@@ -1,6 +1,7 @@
 import { Lock } from 'lucide-react';
 
 import BoxContent from '../elements/BoxContent';
+import IconContent from '../elements/IconContent';
 import ImageContent from '../elements/ImageContent';
 import ProductContent from '../elements/ProductContent';
 import TextContent from '../elements/TextContent';
@@ -8,12 +9,23 @@ import TextContent from '../elements/TextContent';
 const HANDLES = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
 const HANDLE_CURSOR = { nw: 'nwse', n: 'ns', ne: 'nesw', e: 'ew', se: 'nwse', s: 'ns', sw: 'nesw', w: 'ew' };
 
-export default function CanvasElement({ el, selected, primary, editing, onSelect, onChange, onStartDrag, onStartResize, onCommitText, onStartEditText }) {
+export default function CanvasElement({ el, selected, primary, editing, caretHint, onSelect, onChange, onStartDrag, onStartResize, onCommitText, onStartEditText }) {
   if (el.hidden) return null;
   return (
     <div
-      onPointerDown={(e) => { if (editing) return; e.stopPropagation(); onSelect(el.id, e.shiftKey); if (!el.locked) onStartDrag(e, el); }}
-      onDoubleClick={(e) => { if (el.type === 'text') { e.stopPropagation(); onStartEditText(el.id); } }}
+      onPointerDown={(e) => {
+        if (editing) return;
+        e.stopPropagation();
+        // Se o elemento já faz parte da seleção atual (ex.: um grupo formado por
+        // marquee/shift-click), preserva a seleção existente em vez de colapsá-la
+        // para só este elemento — senão o drag abaixo (que usa a seleção múltipla
+        // para mover o grupo inteiro) ficaria dessincronizado do que aparece
+        // visualmente selecionado, dando a impressão de que "puxa vários juntos"
+        // mesmo mostrando só um destacado.
+        if (e.shiftKey || !selected) onSelect(el.id, e.shiftKey);
+        if (!el.locked) onStartDrag(e, el);
+      }}
+      onDoubleClick={(e) => { if (el.type === 'text') { e.stopPropagation(); onStartEditText(el.id, { x: e.clientX, y: e.clientY }); } }}
       className="absolute group"
       style={{
         left: el.x, top: el.y, width: el.w, height: el.h,
@@ -28,7 +40,8 @@ export default function CanvasElement({ el, selected, primary, editing, onSelect
       {el.type === 'product' && <ProductContent el={el} />}
       {el.type === 'image' && <ImageContent el={el} />}
       {el.type === 'box' && <BoxContent el={el} />}
-      {el.type === 'text' && <TextContent el={el} editing={editing} onCommit={(t) => onCommitText(el.id, t)} />}
+      {el.type === 'icon' && <IconContent el={el} />}
+      {el.type === 'text' && <TextContent el={el} editing={editing} caretHint={caretHint} onCommit={(t) => onCommitText(el.id, t)} />}
 
       {/* selection outline + handles */}
       {selected && !editing && (

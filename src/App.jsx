@@ -48,11 +48,14 @@ import LayersList from './components/panels/LayersList';
 import Properties from './components/panels/Properties';
 import BackgroundPopover from './components/popovers/BackgroundPopover';
 import PresentationMode from './components/preview/PresentationMode';
+import DownloadToastStack from './components/ui/DownloadToast';
 import { DEFAULT_FORMAT, MARGIN, PAGE_FORMATS } from './constants/pageConfig';
 import { backgroundToCss, defaultBackground, normalizeBackground } from './constants/background';
 import { buildGrid } from './data/templates';
-import { readImageScaled, uid } from './utils/helpers';
-import { exportAllPagesAsJpg, exportAllPagesAsPdf } from './utils/pdfExport';
+import { findProductById } from './data/ci';
+import { resolveFields, resolveFontSizes, resolveLayout } from './components/elements/ProductContent';
+import { bumpUidCounter, fmt, readImageScaled, uid } from './utils/helpers';
+import { downloadBlob, exportPagesAsPdf, exportPagesAsPdfZip, exportPagesAsPngZip } from './utils/pdfExport';
 import { Analytics } from "@vercel/analytics/react";
 
 // Páginas iniciais — função de inicialização do useState (executada uma vez).
@@ -141,6 +144,9 @@ export default function App() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [marquee, setMarquee] = useState(null); // { x, y, w, h } em coords da página, durante o arraste
   const [editingId, setEditingId] = useState(null);
+  // Ponto (clientX/clientY) do duplo-clique que abriu a edição — usado para selecionar
+  // a palavra clicada em vez do texto inteiro (ver TextContent.jsx).
+  const [editCaretHint, setEditCaretHint] = useState(null);
   // Popover do editor de fundo (cor/gradiente/imagem).
   const [showBg, setShowBg] = useState(false);
 
@@ -179,6 +185,13 @@ export default function App() {
   const [saveToast, setSaveToast] = useState(false);
   const saveToastTimer = useRef(null);
   const [showLabels, setShowLabels] = useState(false);
+  const labelsRef = useRef(null);
+  useEffect(() => {
+    if (!showLabels) return;
+    const h = (e) => { if (!labelsRef.current?.contains(e.target)) setShowLabels(false); };
+    window.addEventListener('pointerdown', h);
+    return () => window.removeEventListener('pointerdown', h);
+  }, [showLabels]);
   const [labelInput, setLabelInput] = useState('');
   const [showProjects, setShowProjects] = useState(false);
   const [showProjectsOverlay, setShowProjectsOverlay] = useState(false);
@@ -361,6 +374,105 @@ export default function App() {
   };
   const toggleLock = (id) => changeEl(id, { locked: !page.elements.find(e => e.id === id)?.locked });
   const toggleHidden = (id) => changeEl(id, { hidden: !page.elements.find(e => e.id === id)?.hidden });
+
+  // ---- desagrupar slot de produto em elementos soltos (ícone + textos) ----
+  // Não temos foto real do produto ainda (só o ícone lucide) — a box vira um ícone
+  // independente + um texto por linha visível (marca/nome/código/preço), perdendo o
+  // vínculo com o catálogo, igual "ungroup" do Figma/Canva.
+  const ungroupProduct = (id) => {
+    const target = page.elements.find(e => e.id === id);
+    if (!target || target.type !== 'product' || !target.productId) return;
+    const p = findProductById(target.productId);
+    if (!p) return;
+
+    const layout = resolveLayout(target);
+    const fields = resolveFields(target);
+    const fs = resolveFontSizes(target);
+    const { x: ox, y: oy, w: ow, h: oh } = target;
+    const pad = 8, gap = 8;
+    const isCard = layout === 'card';
+
+    const created = [];
+    const addPart = (partial) => created.push({ id: uid(), rotation: 0, opacity: 1, hidden: false, locked: false, ...partial });
+
+    // fundo escuro do card fica atrás de tudo (senão o texto branco some ao desagrupar)
+    if (isCard) addPart({ type: 'box', x: ox, y: oy, w: ow, h: oh, radius: target.radius || 0, fill: '#1a1a1a', borderW: 0 });
+
+    // ── ícone ──────────────────────────────────────────────────────
+    let iconRect = null;
+    if (fields.image && layout !== 'minimal') {
+      if (layout === 'top') {
+        iconRect = { x: ox + pad, y: oy + pad, w: ow - pad * 2, h: Math.round((oh - pad * 2) * 0.55) };
+      } else if (layout === 'left') {
+        const iw = Math.round((ow - pad * 2 - gap) * 0.4);
+        iconRect = { x: ox + pad, y: oy + pad, w: iw, h: oh - pad * 2 };
+      } else if (layout === 'right') {
+        const iw = Math.round((ow - pad * 2 - gap) * 0.4);
+        iconRect = { x: ox + ow - pad - iw, y: oy + pad, w: iw, h: oh - pad * 2 };
+      } else if (isCard) {
+        iconRect = { x: ox, y: oy, w: ow, h: oh };
+      }
+      addPart({ type: 'icon', iconName: p.iconName, color: isCard ? '#ffffff' : '#44403c', ...iconRect });
+    }
+
+    // ── bloco de texto ───────────────────────────────────────────────
+    let block;
+    if (layout === 'top') {
+      const textY = iconRect ? iconRect.y + iconRect.h + 6 : oy + pad;
+      block = { x: ox + pad, y: textY, w: ow - pad * 2, h: Math.max(20, oy + oh - pad - textY) };
+    } else if (layout === 'left') {
+      const bx = iconRect ? iconRect.x + iconRect.w + gap : ox + pad;
+      block = { x: bx, y: oy + pad, w: Math.max(20, ox + ow - pad - bx), h: oh - pad * 2 };
+    } else if (layout === 'right') {
+      const bEndX = iconRect ? iconRect.x - gap : ox + ow - pad;
+      block = { x: ox + pad, y: oy + pad, w: Math.max(20, bEndX - (ox + pad)), h: oh - pad * 2 };
+    } else if (isCard) {
+      const bh = Math.round(oh * 0.42);
+      block = { x: ox + pad, y: oy + oh - bh, w: ow - pad * 2, h: bh - pad };
+    } else {
+      block = { x: ox + pad, y: oy + pad, w: ow - pad * 2, h: oh - pad * 2 }; // minimal
+    }
+
+    let cursorY = block.y;
+    const pushLine = (text, fontSize, color, opts = {}) => {
+      const lineH = Math.max(Math.round(fontSize * 1.35), 10);
+      addPart({
+        type: 'text', text, x: block.x, y: cursorY, w: block.w, h: lineH,
+        fontSize, color, weight: opts.weight ?? 400, strike: !!opts.strike,
+        align: layout === 'minimal' || isCard ? 'center' : 'left', font: 'Gantari',
+      });
+      cursorY += lineH + 2;
+    };
+
+    const brandColor = isCard ? '#a8a29e' : '#44403c';
+    const nameColor = isCard ? '#ffffff' : '#1c1917';
+    const codeColor = '#78716c';
+    const priceColor = isCard ? '#fca5a5' : '#be123c';
+    const captionColor = isCard ? '#d6d3d1' : '#44403c';
+    const subtleColor = isCard ? '#a8a29e' : '#78716c';
+
+    if (fields.brand) pushLine(p.brand, fs.brand, brandColor, { weight: 800 });
+    if (fields.name) pushLine(p.name, fs.name, nameColor, { weight: 800 });
+    if (fields.code) pushLine(`cód. ${p.code}`, fs.code, codeColor);
+    if (fields.price) {
+      const priceFs = Math.max(Math.round(28 * fs.priceScale), 10);
+      const smallFs = Math.max(Math.round(9 * fs.priceScale), 7);
+      pushLine(`${p.installments}x R$ ${fmt(p.installmentValue)}`, priceFs, priceColor, { weight: 800 });
+      pushLine('no Crediário Lebes', smallFs, captionColor, { weight: 600 });
+      if (p.priceOld) pushLine(`De R$ ${fmt(p.priceOld)}`, smallFs, subtleColor, { strike: true });
+      pushLine(`Por R$ ${fmt(p.priceCash)} à vista`, smallFs, captionColor, { weight: 600 });
+    }
+
+    setElements(els => {
+      const idx = els.findIndex(e => e.id === id);
+      if (idx < 0) return els;
+      const arr = [...els];
+      arr.splice(idx, 1, ...created);
+      return arr;
+    });
+    setSelectedIds(created.map(c => c.id));
+    setSelectedId(created[created.length - 1]?.id ?? null);
+  };
 
   const copyFormat = useCallback(() => {
     if (!selectedEl || selectedEl.type !== 'product') return;
@@ -641,6 +753,7 @@ export default function App() {
     // Garante ao menos uma página válida e converte fundos legados (string) em objeto.
     const raw = Array.isArray(prj.pages) && prj.pages.length ? prj.pages : [{ id: 1, background: defaultBackground(), elements: [] }];
     const restored = raw.map(p => ({ ...p, background: normalizeBackground(p.background) }));
+    bumpUidCounter(restored.flatMap(p => p.elements || []));
     setPages(restored);
     setCurrentId(restored[0].id);
     setSelectedId(null);
@@ -682,53 +795,39 @@ export default function App() {
     reader.readAsText(file);
   };
 
-  const [pdfExporting, setPdfExporting] = useState(false);
-  const [jpgExporting, setJpgExporting] = useState(false);
+  // Toast de progresso de download (canto inferior direito) — uma entrada por exportação em andamento/recente.
+  const [downloadTasks, setDownloadTasks] = useState([]);
+  const updateDownloadTask = (id, patch) => setDownloadTasks(tasks => tasks.map(t => t.id === id ? { ...t, ...patch } : t));
+  const dismissDownloadTask = (id) => setDownloadTasks(tasks => tasks.filter(t => t.id !== id));
 
-  const exportPdf = async () => {
-    setPdfExporting(true);
-    setShowExport(false);
-    try {
-      const filename = (docTitle.trim() || 'editor-lebes').replace(/[/\\:*?"<>|]/g, '-');
-      await exportAllPagesAsPdf({ pages, format, filename });
-    } catch (err) {
-      alert(`Erro ao gerar PDF: ${err.message}`);
-    } finally {
-      setPdfExporting(false);
-    }
+  const EXPORT_FORMAT_LABELS = {
+    'pdf-digital': 'PDF Digital',
+    'zip-png': 'ZIP de imagens (PNG)',
+    'zip-pdf': 'ZIP de PDFs por página',
   };
 
-  const exportJpg = async () => {
-    setJpgExporting(true);
-    setShowExport(false);
-    try {
-      const filename = (docTitle.trim() || 'editor-lebes').replace(/[/\\:*?"<>|]/g, '-');
-      await exportAllPagesAsJpg({ pages, format, filename });
-    } catch (err) {
-      alert(`Erro ao gerar JPGs: ${err.message}`);
-    } finally {
-      setJpgExporting(false);
+  // formatKey: 'pdf-digital' | 'zip-png' | 'zip-pdf' ('pdf-graphic' fica desabilitado — CMYK ainda não implementado)
+  const runExport = async (formatKey, pagesSubset, retryTaskId) => {
+    const filename = (docTitle.trim() || 'editor-lebes').replace(/[/\\:*?"<>|]/g, '-');
+    const id = retryTaskId || `dl_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    if (retryTaskId) {
+      updateDownloadTask(id, { status: 'baixando', progress: 0, error: undefined });
+    } else {
+      const title = `${EXPORT_FORMAT_LABELS[formatKey] || 'Exportação'} · ${filename}`;
+      setDownloadTasks(tasks => [...tasks, { id, title, status: 'baixando', progress: 0, formatKey, pagesSubset }]);
     }
-  };
-
-  const exportPdfStub = (mode) => {
-    // Stub para CMYK — ainda requer serviço dedicado com perfil ICC.
-    const note =
-`# Exportação CMYK (print-ready) — simulação
-Em produção, gerado por serviço de backend com perfil ICC CMYK, sangria e marcas de corte.
-
-Formato: ${format.label} (${format.mm[0]} × ${format.mm[1]} mm)
-Páginas: ${pages.length}
-Exportado em: ${new Date().toLocaleString('pt-BR')}
-`;
-    const blob = new Blob([note], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `editor-lebes-${mode}-${new Date().toISOString().slice(0,10)}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-    setShowExport(false);
+    try {
+      const onProgress = (progress) => updateDownloadTask(id, { progress });
+      let result;
+      if (formatKey === 'pdf-digital') result = await exportPagesAsPdf({ pages: pagesSubset, format, filename, onProgress });
+      else if (formatKey === 'zip-png') result = await exportPagesAsPngZip({ pages: pagesSubset, format, filename, onProgress });
+      else if (formatKey === 'zip-pdf') result = await exportPagesAsPdfZip({ pages: pagesSubset, format, filename, onProgress });
+      downloadBlob(result.blob, result.filename);
+      updateDownloadTask(id, { status: 'concluido', progress: 100, blob: result.blob, filename: result.filename });
+      setTimeout(() => dismissDownloadTask(id), 6000);
+    } catch (err) {
+      updateDownloadTask(id, { status: 'erro', error: err.message });
+    }
   };
 
   // ---- marquee (seleção por arraste em área vazia do canvas) — bug 6 ----
@@ -739,7 +838,13 @@ Exportado em: ${new Date().toLocaleString('pt-BR')}
     const curY = (e.clientY - m.rect.top) * m.sy;
     const x = Math.min(m.startX, curX), y = Math.min(m.startY, curY);
     const w = Math.abs(curX - m.startX), h = Math.abs(curY - m.startY);
-    if (w > 3 || h > 3) m.moved = true;
+    // Limiar em pixels reais de tela (não em unidades de canvas): com zoom < 100%,
+    // "3 unidades de canvas" pode equivaler a 1px de tela real, tornando o marquee
+    // hipersensível a tremores mínimos do mouse — sobretudo quando há elementos
+    // sobrepostos exatamente na mesma posição, onde qualquer marquee (por menor
+    // que seja) intersecta todos eles e os seleciona juntos sem o usuário querer.
+    const clientDx = e.clientX - m.startClientX, clientDy = e.clientY - m.startClientY;
+    if (Math.hypot(clientDx, clientDy) > 4) m.moved = true;
     setMarquee({ x, y, w, h });
   }, []);
   const onMarqueeUp = useCallback(() => {
@@ -765,7 +870,7 @@ Exportado em: ${new Date().toLocaleString('pt-BR')}
     const sx = format.w / rect.width, sy = format.h / rect.height;
     const startX = (e.clientX - rect.left) * sx;
     const startY = (e.clientY - rect.top) * sy;
-    marqueeRef.current = { startX, startY, sx, sy, rect, moved: false };
+    marqueeRef.current = { startX, startY, startClientX: e.clientX, startClientY: e.clientY, sx, sy, rect, moved: false };
     if (!e.shiftKey) clearSelection();
     window.addEventListener('pointermove', onMarqueeMove);
     window.addEventListener('pointerup', onMarqueeUp);
@@ -917,7 +1022,7 @@ Exportado em: ${new Date().toLocaleString('pt-BR')}
   );
 
   if (view === 'login') {
-    return <LoginScreen onLogin={(role) => navigate(role)} />;
+    return <LoginScreen onLogin={() => navigate('hub')} />;
   }
 
   if (view === 'hub') {
@@ -1179,7 +1284,7 @@ Exportado em: ${new Date().toLocaleString('pt-BR')}
           </div>
 
           {/* Rótulos do projeto */}
-          <div className="relative hidden sm:block">
+          <div className="relative hidden sm:block" ref={labelsRef}>
             <button
               onClick={() => { setShowLabels(v => !v); setLabelInput(''); }}
               title="Rótulos do projeto"
@@ -1329,7 +1434,11 @@ Exportado em: ${new Date().toLocaleString('pt-BR')}
         {/* CENTER CANVAS */}
         <main className={`flex-1 flex flex-col min-w-0 relative ${isDark ? 'bg-stone-900/30' : 'bg-[#eeede8]'}`}>
 
-          <div ref={scrollAreaRef} className={`flex-1 overflow-auto flex flex-col items-center px-6 pt-5 gap-5 ${isMobile ? 'pb-32' : 'pb-20'}`}>
+          <div
+            ref={scrollAreaRef}
+            onPointerDown={(e) => { if (e.target === e.currentTarget) { clearSelection(); setEditingId(null); } }}
+            className={`flex-1 overflow-auto flex flex-col items-center px-6 pt-5 gap-5 ${isMobile ? 'pb-32' : 'pb-20'}`}
+          >
 
             {/* Pill: navegação de páginas + zoom */}
             <div className={`flex items-center gap-1 rounded-2xl px-3 py-1.5 shrink-0 text-[11px] border shadow ${
@@ -1390,11 +1499,12 @@ Exportado em: ${new Date().toLocaleString('pt-BR')}
                     selected={activeIds.includes(el.id)}
                     primary={selectedId === el.id}
                     editing={editingId === el.id}
+                    caretHint={editingId === el.id ? editCaretHint : null}
                     onSelect={selectEl}
                     onChange={changeEl}
                     onStartDrag={onStartDrag}
                     onStartResize={onStartResize}
-                    onStartEditText={(id) => { selectEl(id); setEditingId(id); }}
+                    onStartEditText={(id, point) => { selectEl(id); setEditingId(id); setEditCaretHint(point || null); }}
                     onCommitText={(id, text) => { changeEl(id, { text }); setEditingId(null); }}
                   />
                 ))}
@@ -1481,7 +1591,7 @@ Exportado em: ${new Date().toLocaleString('pt-BR')}
           {rightTab === 'props' && (
             <div className="flex-1 overflow-y-auto min-h-0">
               {selectedEl
-                ? <Properties el={selectedEl} onChange={changeEl} onLayer={layerOp} onDelete={deleteEl} onDuplicate={duplicateEl} onToggleLock={toggleLock} onCopyFormat={copyFormat} onPasteFormat={pasteFormat} hasFormatClipboard={!!formatClipboard} pasteCount={pasteCount} />
+                ? <Properties el={selectedEl} onChange={changeEl} onLayer={layerOp} onDelete={deleteEl} onDuplicate={duplicateEl} onToggleLock={toggleLock} onCopyFormat={copyFormat} onPasteFormat={pasteFormat} hasFormatClipboard={!!formatClipboard} pasteCount={pasteCount} onUngroupProduct={ungroupProduct} />
                 : (
                   <div className={`flex flex-col items-center justify-center h-40 gap-1 ${isDark ? 'text-stone-600' : 'text-stone-400'}`}>
                     <p className="text-[12px]">Selecione um elemento</p>
@@ -1570,12 +1680,10 @@ Exportado em: ${new Date().toLocaleString('pt-BR')}
       {showExport && (
         <ExportModal
           onClose={() => setShowExport(false)}
-          onPdf={exportPdf}
-          onJpg={exportJpg}
-          onCmyk={() => exportPdfStub('cmyk')}
+          onExportAll={(formatKey) => runExport(formatKey, pages)}
+          onExportPages={(formatKey, pageIds) => runExport(formatKey, pages.filter(p => pageIds.includes(p.id)))}
           onEditable={exportEditable}
-          format={format} pages={pages}
-          exporting={pdfExporting} exportingJpg={jpgExporting} />
+          format={format} pages={pages} docTitle={docTitle} currentPageId={currentId} />
       )}
       {showPreview && (
         <PresentationMode
@@ -1583,6 +1691,12 @@ Exportado em: ${new Date().toLocaleString('pt-BR')}
           startIndex={pageIdx}
           onClose={() => setShowPreview(false)} />
       )}
+
+      <DownloadToastStack
+        tasks={downloadTasks}
+        onDismiss={dismissDownloadTask}
+        onRedownload={(task) => downloadBlob(task.blob, task.filename)}
+        onRetry={(task) => runExport(task.formatKey, task.pagesSubset, task.id)} />
       {showAI && (
         <AIGenerateModal
           format={format}
@@ -1608,7 +1722,7 @@ Exportado em: ${new Date().toLocaleString('pt-BR')}
             {mobilePanel !== null && (mobilePanel === '__props' ? (
               <div className="flex-1 overflow-y-auto min-h-0">
                 {selectedEl
-                  ? <Properties el={selectedEl} onChange={changeEl} onLayer={layerOp} onDelete={deleteEl} onDuplicate={duplicateEl} onToggleLock={toggleLock} onCopyFormat={copyFormat} onPasteFormat={pasteFormat} hasFormatClipboard={!!formatClipboard} pasteCount={pasteCount} />
+                  ? <Properties el={selectedEl} onChange={changeEl} onLayer={layerOp} onDelete={deleteEl} onDuplicate={duplicateEl} onToggleLock={toggleLock} onCopyFormat={copyFormat} onPasteFormat={pasteFormat} hasFormatClipboard={!!formatClipboard} pasteCount={pasteCount} onUngroupProduct={ungroupProduct} />
                   : <div className="flex items-center justify-center h-40 text-stone-500 text-sm">Selecione um elemento</div>
                 }
               </div>

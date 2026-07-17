@@ -1,97 +1,122 @@
-import { ArrowRight, Users, ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
+import { Phone } from 'lucide-react';
 
-const ROLES = [
-  {
-    id: 'hub',
-    label: 'Colaborador',
-    desc: 'Acesso ao Hub de Marketing, Estúdio Criativo, Campanhas, Marcas e Central de Apoio.',
-    Icon: Users,
-    iconBg: '#5ca847',
-    cardBg: '#e8f0e4',
-    borderColor: '#5ca847',
-    textColor: '#3d7a2e',
-    btnBg: '#5ca847',
-    btnHover: '#4a9438',
-  },
-  {
-    id: 'admin',
-    label: 'Administrador',
-    desc: 'Acesso ao painel de gestão de usuários, permissões e cadastros da plataforma.',
-    Icon: ShieldCheck,
-    iconBg: '#c0392b',
-    cardBg: '#fce8e8',
-    borderColor: '#c0392b',
-    textColor: '#9b2318',
-    btnBg: '#c0392b',
-    btnHover: '#a93228',
-  },
-];
+const SUPPORT_PHONE = '(51) 3499-7075';
 
 export default function LoginScreen({ onLogin }) {
+  const [step, setStep] = useState('login'); // 'login' | 'forgot'
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onLogin();
+  };
+
   return (
     <div
-      className="w-full h-screen flex items-center justify-center bg-[#f7f6f2]"
+      className="w-full h-screen relative bg-[#f7f6f2] overflow-auto"
       style={{ fontFamily: 'Gantari, system-ui, sans-serif' }}
     >
-      <div className="flex flex-col items-center gap-8 w-full max-w-[600px] px-4">
+      <div className="absolute top-0 left-0 w-full h-[320px] bg-[#ededeb]" />
 
-        {/* Logo + brand */}
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 bg-[#5ca847] rounded-[14px] flex items-center justify-center shadow-sm">
-            <span className="text-white font-bold text-[20px]">L</span>
-          </div>
-          <div className="text-center">
-            <p className="font-semibold text-[11px] tracking-widest text-[#5ca847] uppercase mb-1">
-              Grupo Lebes · Marketing
+      <div className="relative flex items-center justify-center min-h-screen px-4 py-10">
+        <div className="w-full max-w-[460px] bg-white border border-[#e8e8e5] rounded-[20px] overflow-hidden">
+          <div className="flex flex-col gap-2 px-10 pt-10 pb-8">
+            <div className="flex items-center gap-2 pb-2">
+              <div className="w-8 h-8 rounded-[10px] bg-[#5ca847] flex items-center justify-center shrink-0">
+                <span className="text-white font-bold text-[13px]">L</span>
+              </div>
+              <p className="font-bold text-[14px] text-[#2e2e2e]">HUB de Marketing</p>
+            </div>
+            <p className="font-bold text-[22px] text-[#2e2e2e] tracking-[-0.4px]">
+              {step === 'login' ? 'Bem-vindo de volta' : 'Esqueci minha senha'}
             </p>
-            <h1 className="font-bold text-[28px] text-[#2e2e2e] tracking-[-0.56px]">
-              Hub de Marketing
-            </h1>
-            <p className="font-light text-[14px] text-[#606060] mt-1">
-              Selecione como você vai entrar
+            <p className="font-normal text-[13px] text-[#606060]">
+              {step === 'login'
+                ? 'Entre com suas credenciais de acesso'
+                : 'Fale com o suporte de TI para redefinir sua senha'}
             </p>
           </div>
-        </div>
 
-        {/* Opções */}
-        <div className="flex gap-4 w-full">
-          {ROLES.map(({ id, label, desc, Icon, iconBg, cardBg, borderColor, textColor, btnBg, btnHover }) => (
-            <button
-              key={id}
-              onClick={() => onLogin(id)}
-              className="flex-1 flex flex-col items-start p-6 rounded-[20px] text-left border transition-all hover:shadow-md active:scale-[0.98]"
-              style={{ background: cardBg, borderColor }}
-            >
-              <div
-                className="w-12 h-12 rounded-[14px] flex items-center justify-center shrink-0"
-                style={{ background: iconBg }}
+          <div className="h-px bg-[#e8e8e5]" />
+
+          {step === 'login' ? (
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4 px-10 pt-7 pb-8">
+              <label className="flex flex-col gap-1.5 w-full">
+                <span className="flex items-center gap-1 text-[12px]">
+                  <span className="font-semibold text-[#2e2e2e]">E-mail</span>
+                  <span className="font-bold text-[#c0392b]">*</span>
+                </span>
+                <input
+                  type="email"
+                  required
+                  autoComplete="username"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="seu.email@lebes.com.br"
+                  className="h-11 px-3.5 rounded-[10px] border border-[#e8e8e5] bg-[#f7f6f2] text-[13px] text-[#2e2e2e] placeholder:text-[#888] outline-none focus:border-[#5ca847]"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1.5 w-full">
+                <span className="flex items-center gap-1 text-[12px]">
+                  <span className="font-semibold text-[#2e2e2e]">Senha</span>
+                  <span className="font-bold text-[#c0392b]">*</span>
+                </span>
+                <input
+                  type="password"
+                  required
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Digite sua senha"
+                  className="h-11 px-3.5 rounded-[10px] border border-[#e8e8e5] bg-[#f7f6f2] text-[13px] text-[#2e2e2e] placeholder:text-[#888] outline-none focus:border-[#5ca847]"
+                />
+              </label>
+
+              <button
+                type="button"
+                onClick={() => setStep('forgot')}
+                className="self-end font-medium text-[12px] text-[#5ca847] hover:underline"
               >
-                <Icon size={22} color="#fff" />
+                Esqueci minha senha
+              </button>
+
+              <button
+                type="submit"
+                className="h-12 rounded-[12px] bg-[#5ca847] hover:bg-[#4a9438] transition-colors font-semibold text-[14px] text-white"
+              >
+                Entrar
+              </button>
+            </form>
+          ) : (
+            <div className="flex flex-col gap-4 px-10 pt-7 pb-8">
+              <p className="font-light text-[13px] text-[#606060] leading-snug">
+                A redefinição de senha é feita pelo suporte de TI. Entre em contato
+                informando seu usuário de rede para receber ajuda.
+              </p>
+
+              <div className="flex items-center gap-3 rounded-[10px] border border-[#e8e8e5] bg-[#f7f6f2] px-4 py-3.5">
+                <div className="w-9 h-9 rounded-[10px] bg-[#5ca847] flex items-center justify-center shrink-0">
+                  <Phone size={16} color="#fff" />
+                </div>
+                <div>
+                  <p className="font-semibold text-[13px] text-[#2e2e2e]">{SUPPORT_PHONE}</p>
+                  <p className="font-normal text-[11.5px] text-[#888]">Suporte de TI · Grupo Lebes</p>
+                </div>
               </div>
 
-              <p
-                className="font-bold text-[19px] mt-4 mb-1"
-                style={{ color: textColor }}
+              <button
+                type="button"
+                onClick={() => setStep('login')}
+                className="self-center font-medium text-[12px] text-[#606060] hover:text-[#2e2e2e]"
               >
-                {label}
-              </p>
-              <p className="font-normal text-[12.5px] text-[#606060] leading-snug flex-1">
-                {desc}
-              </p>
-
-              <div
-                className="mt-5 flex items-center gap-2 font-semibold text-[13px] self-end"
-                style={{ color: textColor }}
-              >
-                Entrar <ArrowRight size={14} />
-              </div>
-            </button>
-          ))}
+                ← Voltar para o login
+              </button>
+            </div>
+          )}
         </div>
-
-        <p className="font-normal text-[11.5px] text-[#aaa]">
-          Apenas para teste de interface — sem autenticação real.
-        </p>
       </div>
     </div>
   );

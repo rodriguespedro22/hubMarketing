@@ -1,4 +1,5 @@
 import BoxContent from '../elements/BoxContent';
+import IconContent from '../elements/IconContent';
 import ImageContent from '../elements/ImageContent';
 import ProductContent from '../elements/ProductContent';
 import TextContent from '../elements/TextContent';
@@ -20,6 +21,7 @@ export function StaticElement({ el }) {
       {el.type === 'product' && <ProductContent el={el} />}
       {el.type === 'image'   && <ImageContent el={el} />}
       {el.type === 'box'     && <BoxContent el={el} />}
+      {el.type === 'icon'    && <IconContent el={el} />}
       {el.type === 'text'    && <TextContent el={el} editing={false} onCommit={() => {}} />}
     </div>
   );

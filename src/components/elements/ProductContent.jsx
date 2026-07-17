@@ -1,24 +1,26 @@
 import { Square, Tag } from 'lucide-react';
 
 import { ICONS } from '../../data/icons';
-import { PRODUCTS } from '../../data/products';
+import { findProductById } from '../../data/ci';
 import PriceTag from './PriceTag';
 
 export const DEFAULT_FIELDS    = { image: true, brand: true, name: true, code: true, price: true };
 export const DEFAULT_FONT_SIZES = { brand: 7, name: 11, code: 6, priceScale: 0.85 };
 
 // backward compat: 'vertical' → 'top', 'horizontal' → 'left'
-function resolveLayout(el) {
+export function resolveLayout(el) {
   const l = el.layout || 'top';
   if (l === 'vertical')   return 'top';
   if (l === 'horizontal') return 'left';
   return l;
 }
 
-function resolveFields(el)    { return { ...DEFAULT_FIELDS,     ...(el.fields    || {}) }; }
-function resolveFontSizes(el) { return { ...DEFAULT_FONT_SIZES, ...(el.fontSizes || {}) }; }
+export function resolveFields(el)    { return { ...DEFAULT_FIELDS,     ...(el.fields    || {}) }; }
+export function resolveFontSizes(el) { return { ...DEFAULT_FONT_SIZES, ...(el.fontSizes || {}) }; }
+// fundo do slot: 'transparent' explícito, senão a cor definida (ou branco padrão)
+function resolveBg(el) { return el.fill === 'transparent' ? 'transparent' : (el.fill || '#fff'); }
 
-function TextBlock({ p, fields, fs }) {
+function TextBlock({ p, fields, fs, priceVariant = 'lead' }) {
   return (
     <div className="overflow-hidden min-w-0">
       {fields.brand && (
@@ -35,17 +37,18 @@ function TextBlock({ p, fields, fs }) {
         <div className="text-stone-500" style={{ fontSize: fs.code }}>cód. {p.code}</div>
       )}
       {fields.price && (
-        <div className="mt-1"><PriceTag p={p} scale={fs.priceScale} /></div>
+        <div className="mt-1"><PriceTag p={p} scale={fs.priceScale} variant={priceVariant} /></div>
       )}
     </div>
   );
 }
 
 export default function ProductContent({ el }) {
-  const p      = el.productId ? PRODUCTS.find(x => x.id === el.productId) : null;
+  const p      = el.productId ? findProductById(el.productId) : null;
   const layout = resolveLayout(el);
   const fields = resolveFields(el);
   const fs     = resolveFontSizes(el);
+  const bg     = resolveBg(el);
 
   if (!p) {
     return (
@@ -62,7 +65,7 @@ export default function ProductContent({ el }) {
   // ── top: image above, text below ──────────────────────────────
   if (layout === 'top') {
     return (
-      <div className="w-full h-full rounded-[inherit] bg-white flex flex-col p-2 overflow-hidden pointer-events-none">
+      <div className="w-full h-full rounded-[inherit] flex flex-col p-2 overflow-hidden pointer-events-none" style={{ background: bg }}>
         {fields.image && (
           <div className="flex-1 flex items-center justify-center min-h-0">
             <Icon size={iconSz} className="text-stone-700" strokeWidth={1}
@@ -79,7 +82,7 @@ export default function ProductContent({ el }) {
   // ── left: image on left, text on right ────────────────────────
   if (layout === 'left') {
     return (
-      <div className="w-full h-full rounded-[inherit] bg-white flex flex-row p-2 gap-2 overflow-hidden pointer-events-none">
+      <div className="w-full h-full rounded-[inherit] flex flex-row p-2 gap-2 overflow-hidden pointer-events-none" style={{ background: bg }}>
         {fields.image && (
           <div className="flex items-center justify-center shrink-0" style={{ width: '40%' }}>
             <Icon size={Math.min(el.h * 0.55, el.w * 0.35)} className="text-stone-700" strokeWidth={1}
@@ -87,7 +90,7 @@ export default function ProductContent({ el }) {
           </div>
         )}
         <div className="flex flex-col justify-center flex-1 min-w-0">
-          <TextBlock p={p} fields={fields} fs={fs} />
+          <TextBlock p={p} fields={fields} fs={fs} priceVariant="trail" />
         </div>
       </div>
     );
@@ -96,9 +99,9 @@ export default function ProductContent({ el }) {
   // ── right: image on right, text on left ───────────────────────
   if (layout === 'right') {
     return (
-      <div className="w-full h-full rounded-[inherit] bg-white flex flex-row p-2 gap-2 overflow-hidden pointer-events-none">
+      <div className="w-full h-full rounded-[inherit] flex flex-row p-2 gap-2 overflow-hidden pointer-events-none" style={{ background: bg }}>
         <div className="flex flex-col justify-center flex-1 min-w-0">
-          <TextBlock p={p} fields={fields} fs={fs} />
+          <TextBlock p={p} fields={fields} fs={fs} priceVariant="trail" />
         </div>
         {fields.image && (
           <div className="flex items-center justify-center shrink-0" style={{ width: '40%' }}>
@@ -145,7 +148,7 @@ export default function ProductContent({ el }) {
 
   // ── minimal: no image area, text centered ─────────────────────
   return (
-    <div className="w-full h-full rounded-[inherit] bg-white flex flex-col items-center justify-center p-2 text-center overflow-hidden pointer-events-none">
+    <div className="w-full h-full rounded-[inherit] flex flex-col items-center justify-center p-2 text-center overflow-hidden pointer-events-none" style={{ background: bg }}>
       {fields.brand && (
         <div className="font-bold uppercase tracking-widest text-stone-400" style={{ fontSize: fs.brand }}>
           {p.brand}

@@ -1,6 +1,19 @@
 let _id = 1000;
 
 export const uid = () => `el_${++_id}`;
+
+// Sincroniza o contador de uid() com os ids já usados por um projeto carregado
+// (abrir projeto salvo, importar .json). Sem isso, o contador sempre reinicia em
+// 1000 a cada sessão e colide com ids de elementos do projeto carregado (ex.: o
+// primeiro elemento novo criado na sessão vira "el_1001", igual a um elemento já
+// existente no projeto) — dois elementos com o mesmo id no array fazem qualquer
+// operação por id (mover, selecionar, alterar) afetar os dois ao mesmo tempo.
+export const bumpUidCounter = (elements = []) => {
+  for (const el of elements) {
+    const match = /^el_(\d+)$/.exec(el?.id || '');
+    if (match) _id = Math.max(_id, Number(match[1]));
+  }
+};
 export const fmt = (n) => Number(n).toFixed(2).replace('.', ',');
 export const splitMoney = (n) => { const [i, d] = Number(n).toFixed(2).split('.'); return { int: i, dec: d }; };
 export const clamp = (v, min, max) => Math.max(min, Math.min(max, v));

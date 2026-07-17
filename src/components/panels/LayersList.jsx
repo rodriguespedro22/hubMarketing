@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Eye, EyeOff, GripHorizontal, Image as ImageIcon, Lock, Square, Tag, Type } from 'lucide-react';
 
-import { PRODUCTS } from '../../data/products';
+import { findProductById } from '../../data/ci';
 
 const TYPE_ICON = { product: Tag, image: ImageIcon, text: Type, box: Square };
 
@@ -42,7 +42,7 @@ export default function LayersList({ elements, selectedId, activeIds = [], onSel
       {ordered.map((el) => {
         const Icon = TYPE_ICON[el.type] || Square;
         const label = el.type === 'product'
-          ? (el.productId ? (PRODUCTS.find(p => p.id === el.productId)?.name || 'Produto') : 'Slot vazio')
+          ? (el.productId ? (findProductById(el.productId)?.name || 'Produto') : 'Slot vazio')
           : el.type === 'text' ? `"${(el.text || '').slice(0, 18)}"`
           : el.type === 'image' ? (el.src ? 'Imagem' : 'Imagem vazia') : 'Caixa';
         const isDragged = draggedId === el.id;

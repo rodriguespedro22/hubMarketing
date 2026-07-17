@@ -24,50 +24,6 @@ Plataforma front-end em React + Vite para o time de marketing do Grupo Lebes. Re
 - Gemini API (geração de layouts via IA)
 - Vercel Analytics
 
-**Back-end** *(branch `dev`)*
-- Node.js + Express
-- Playwright / Chromium (exportação de PDF)
-- Supabase (integração planejada)
-
----
-
-## Como rodar
-
-### Front-end
-
-```bash
-npm install
-npm run dev
-```
-
-Acessar em `http://localhost:5173`.
-
-### Back-end (exportação de PDF)
-
-```bash
-cd backend
-cp .env.example .env        # ajuste as variáveis conforme necessário
-npm install
-npx playwright install chromium   # obrigatório na primeira vez (~180 MB)
-npm run dev                 # porta 3001
-```
-
-Configure a variável de ambiente no front-end:
-
-```env
-# .env na raiz do projeto
-VITE_API_URL=http://localhost:3001
-```
-
-### Build de produção
-
-```bash
-npm run build
-npm run preview
-```
-
----
-
 ## Estrutura do projeto
 
 ```
@@ -172,13 +128,10 @@ editorLebes/
     │   └── lebesExamples.js        ← Exemplos de páginas para few-shot do Gemini
     │
     ├── utils/
-    │   ├── helpers.js              ← uid, fmt, splitMoney, clamp, readImageScaled
-    │   ├── aiGenerator.js          ← Gerador local de layouts (sem API externa)
-    │   ├── geminiClient.js         ← Integração com Gemini API
-    │   └── pdfExport.js            ← Serializa páginas e chama POST /api/export/pdf
-    │
-    └── legacy/
-        └── lebes-editor.original.jsx ← Arquivo original monolítico (somente referência)
+        ├── helpers.js              ← uid, fmt, splitMoney, clamp, readImageScaled
+        ├── aiGenerator.js          ← Gerador local de layouts (sem API externa)
+        ├── geminiClient.js         ← Integração com Gemini API
+        └── pdfExport.js            ← Serializa páginas e chama POST /api/export/pdf
 ```
 
 ---
@@ -209,7 +162,7 @@ editorLebes/
 - Grade automática de produtos (N colunas × M linhas)
 - Múltiplas páginas por projeto
 - Templates prontos e templates salvos pelo usuário
-- Geração de layouts via IA (local ou Gemini)
+- Geração de layouts via IA (Gemini)
 - Fundos: cor sólida, gradiente ou imagem
 - Modo apresentação em tela cheia
 - Exportação: PDF via Playwright (back-end) ou JSON editável
@@ -266,18 +219,7 @@ Todos os elementos compartilham: `id`, `type`, `x`, `y`, `w`, `h`, `rotation`, `
 | Branch | Conteúdo | Deploy |
 |---|---|---|
 | `main` | Somente front-end | Vercel |
-| `dev` | Front-end + back-end | Railway / Render |
+| `dev` | Front-end + back-end de teste | Railway / Render |
 
 ---
 
-## Roadmap
-
-- [x] Editor visual com múltiplas páginas e elementos
-- [x] Geração de layouts por IA (local e Gemini)
-- [x] Exportação de PDF multi-página via Playwright
-- [x] Hub de Marketing com 4 módulos
-- [x] Central de Campanhas com calendário e repositório de arquivos
-- [ ] Integração Supabase (substituir catálogo mockado)
-- [ ] Mover chave Gemini do localStorage para o back-end
-- [ ] Autenticação via Supabase Auth
-- [ ] Deploy do back-end com Dockerfile incluindo Playwright

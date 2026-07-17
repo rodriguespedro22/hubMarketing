@@ -10,10 +10,10 @@ export default function SavedTemplateRow({ tpl, onApply, onDelete, onRename }) {
   const otherCount = tpl.elements.length - productCount;
   const commit = () => { const v = draft.trim(); if (v && v !== tpl.name) onRename(v); setEditing(false); };
 
-  // Mini preview generation: bounding box of all elements, scale into thumb
+
   const thumb = useMemo(() => {
     if (tpl.elements.length === 0) return null;
-    // Use saved format if exists, fall back to A4 defaults
+
     const w = 560, h = 792;
     return { w, h, elements: tpl.elements };
   }, [tpl.elements]);
